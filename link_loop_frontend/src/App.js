@@ -1,47 +1,104 @@
-import React, { useState, useEffect } from 'react';
-import logo from './logo.svg';
+import React, { useEffect, useMemo, useState } from 'react';
 import './App.css';
+import { applyThemeToDocument } from './theme';
+import { useGameState } from './hooks/useGameState';
+import { useTimer } from './hooks/useTimer';
+import Grid from './components/Grid';
+import TopBar from './components/TopBar';
+import CompletionModal from './components/CompletionModal';
+import { formatSeconds } from './utils/gameUtils';
+import { leaderboardEnabled, submitScore } from './services/leaderboard';
 
 // PUBLIC_INTERFACE
 function App() {
-  const [theme, setTheme] = useState('light');
-
-  // Effect to apply theme to document element
+  /** Main Link Loop application component. Renders the grid, top bar, and completion modal. */
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-  }, [theme]);
+    applyThemeToDocument();
+  }, []);
 
-  // PUBLIC_INTERFACE
-  const toggleTheme = () => {
-    setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
+  const [size] = useState(5); // can be configurable in future
+  const game = useGameState({ size, seed: 1337 });
+  const { seconds, pause, resume, reset: resetTimer } = useTimer(true);
+
+  // Pause timer when completed
+  useEffect(() => {
+    if (game.completed) pause();
+  }, [game.completed, pause]);
+
+  const onUndo = () => {
+    game.actions.undo();
   };
 
+  const onReset = () => {
+    game.actions.reset();
+    resetTimer();
+    resume();
+  };
+
+  const onPlayAgain = () => {
+    game.actions.reset();
+    resetTimer();
+    resume();
+  };
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const enableLeaderboard = leaderboardEnabled();
+
+  const onSubmitScore = async () => {
+    if (!enableLeaderboard || isSubmitting) return;
+    const name = window.prompt('Enter your name for the leaderboard:') || '';
+    if (!name.trim()) return;
+    try {
+      setIsSubmitting(true);
+      await submitScore({ name: name.trim(), seconds: Math.floor(seconds) });
+      alert('Score submitted!');
+    } catch (e) {
+      console.error(e);
+      alert('Unable to submit score.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const movesCount = useMemo(() => Math.max(0, game.history.length - 1), [game.history.length]);
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <button 
-          className="theme-toggle" 
-          onClick={toggleTheme}
-          aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
-        >
-          {theme === 'light' ? '🌙 Dark' : '☀️ Light'}
-        </button>
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <p>
-          Current theme: <strong>{theme}</strong>
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div className="App app-shell">
+      <TopBar
+        seconds={seconds}
+        onUndo={onUndo}
+        onReset={onReset}
+        movesCount={movesCount}
+        showLeaderboard={enableLeaderboard}
+        onLeaderboardClick={() => window.alert('Leaderboard UI not implemented; backend integration is optional.')}
+      />
+      <main className="main">
+        <section className="board-card" aria-describedby="rules">
+          <Grid
+            grid={game.grid}
+            path={game.path}
+            containerRef={game.containerRef}
+            handlers={game.handlers}
+          />
+          <div className="rules" id="rules">
+            <p>Connect numbers in ascending order with one continuous path that visits every cell exactly once.</p>
+            {!game.completed && game.validation.reason && (
+              <p className="validation">{game.validation.reason}</p>
+            )}
+            {game.completed && (
+              <p className="success">Completed in {formatSeconds(seconds)}.</p>
+            )}
+          </div>
+        </section>
+      </main>
+      <CompletionModal
+        open={game.completed}
+        seconds={seconds}
+        onClose={() => {}}
+        onPlayAgain={onPlayAgain}
+        onSubmitScore={onSubmitScore}
+        enableLeaderboard={enableLeaderboard}
+      />
     </div>
   );
 }

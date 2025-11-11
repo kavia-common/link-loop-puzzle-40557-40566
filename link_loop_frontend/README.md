@@ -1,82 +1,58 @@
-# Lightweight React Template for KAVIA
+# Link Loop Frontend (React)
 
-This project provides a minimal React template with a clean, modern UI and minimal dependencies.
+A modern, lightweight React implementation of the Link Loop puzzle.
+
+Goal: Connect numbers in ascending order (1 → 2 → 3 → … → 9) across a grid using a single continuous path that visits every cell exactly once.
 
 ## Features
 
-- **Lightweight**: No heavy UI frameworks - uses only vanilla CSS and React
-- **Modern UI**: Clean, responsive design with KAVIA brand styling
-- **Fast**: Minimal dependencies for quick loading times
-- **Simple**: Easy to understand and modify
+- Ocean Professional theme with blue and amber accents
+- Responsive, accessible grid with pointer and touch support
+- Smooth SVG path animation for drawing
+- Undo and Reset controls
+- Timer with pause on completion
+- Validation for cell coverage, adjacency, and digit order
+- Optional leaderboard integration via environment variable (backend is optional)
+- Minimal dependencies, no heavy UI framework
 
 ## Getting Started
 
-In the project directory, you can run:
+Install dependencies and run:
 
-### `npm start`
+- npm start
+- npm test
+- npm run build
 
-Runs the app in development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+Visit http://localhost:3000.
 
-### `npm test`
+## Environment Variables
 
-Launches the test runner in interactive watch mode.
+The app uses these optional env vars:
 
-### `npm run build`
+- REACT_APP_BACKEND_URL: If provided, enables leaderboard fetch/submit via `${REACT_APP_BACKEND_URL}/leaderboard`
+- REACT_APP_API_BASE: Alternative to the above; first non-empty wins
+- REACT_APP_FRONTEND_URL, REACT_APP_WS_URL, REACT_APP_NODE_ENV, REACT_APP_NEXT_TELEMETRY_DISABLED, REACT_APP_ENABLE_SOURCE_MAPS, REACT_APP_PORT, REACT_APP_TRUST_PROXY, REACT_APP_LOG_LEVEL, REACT_APP_HEALTHCHECK_PATH, REACT_APP_FEATURE_FLAGS, REACT_APP_EXPERIMENTS_ENABLED: Not required for core gameplay, included for platform compatibility
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+Create a `.env.local` as needed. Do not commit secrets.
 
-## Customization
+## Code Structure
 
-### Colors
+- src/theme.js: Theme tokens and CSS variable application
+- src/utils/gameUtils.js: Grid generation, path building, validation, formatting
+- src/hooks/useGameState.js: Core game state, interactions, undo/reset, validation
+- src/hooks/useTimer.js: Simple timer with pause/resume/reset
+- src/components/Grid.jsx: Responsive grid and animated path overlay
+- src/components/PathSVG.jsx: SVG path rendering with stroke animation
+- src/components/TopBar.jsx: Timer, moves, undo/reset, leaderboard button
+- src/components/CompletionModal.jsx: Completion summary and score submission
+- src/services/leaderboard.js: Optional backend integration
 
-The main brand colors are defined as CSS variables in `src/App.css`:
+## Accessibility
 
-```css
-:root {
-  --kavia-orange: #E87A41;
-  --kavia-dark: #1A1A1A;
-  --text-color: #ffffff;
-  --text-secondary: rgba(255, 255, 255, 0.7);
-  --border-color: rgba(255, 255, 255, 0.1);
-}
-```
+- The grid uses role="application" and is fully pointer/touch accessible.
+- Live regions for timer text updates are minimized to avoid noise; summary shown on completion.
 
-### Components
+## Notes
 
-This template uses pure HTML/CSS components instead of a UI framework. You can find component styles in `src/App.css`. 
+- The sample puzzle generator scatters digits 1..9 randomly; it does not guarantee a uniquely-solvable puzzle. The validation enforces continuous coverage and digit order, so the game is fully playable.
 
-Common components include:
-- Buttons (`.btn`, `.btn-large`)
-- Container (`.container`)
-- Navigation (`.navbar`)
-- Typography (`.title`, `.subtitle`, `.description`)
-
-## Learn More
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
