@@ -92,6 +92,7 @@ a { color: var(--c-primary); }
 .btn:active { transform: translateY(0px); }
 .btn.secondary { background: var(--c-secondary); color: #1F2937; }
 .btn.danger { background: var(--c-error); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(0.2); }
 
 /* Main */
 .main {

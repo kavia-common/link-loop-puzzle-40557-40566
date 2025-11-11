@@ -18,11 +18,13 @@ function App() {
 
   const [size] = useState(5); // can be configurable in future
   const game = useGameState({ size, seed: 1337 });
-  const { seconds, pause, resume, reset: resetTimer } = useTimer(true);
+  const { seconds, pause, resume, reset: resetTimer, running } = useTimer(false);
 
-  // Pause timer when completed
+  // Start/pause timer depending on state transitions
   useEffect(() => {
-    if (game.completed) pause();
+    if (game.completed) {
+      pause();
+    }
   }, [game.completed, pause]);
 
   const onUndo = () => {
@@ -31,14 +33,22 @@ function App() {
 
   const onReset = () => {
     game.actions.reset();
+  };
+
+  const onStart = () => {
+    game.actions.startGame();
+    resetTimer();
+    resume();
+  };
+
+  const onRestart = () => {
+    game.actions.restartGame();
     resetTimer();
     resume();
   };
 
   const onPlayAgain = () => {
-    game.actions.reset();
-    resetTimer();
-    resume();
+    onRestart();
   };
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -71,6 +81,10 @@ function App() {
         movesCount={movesCount}
         showLeaderboard={enableLeaderboard}
         onLeaderboardClick={() => window.alert('Leaderboard UI not implemented; backend integration is optional.')}
+        started={game.started}
+        completed={game.completed}
+        onStart={onStart}
+        onRestart={onRestart}
       />
       <main className="main">
         <section className="board-card" aria-describedby="rules">

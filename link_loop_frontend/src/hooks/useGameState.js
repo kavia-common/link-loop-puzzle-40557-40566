@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { generateGrid, validatePath } from '../utils/gameUtils';
+import { generateGrid, validatePath, isAdjacent, nextRequiredDigitFromPath } from '../utils/gameUtils';
 
 /**
  * Hook encapsulating the Link Loop game state and interactions.
- * Adds strict next-number progression blocking and invalid-move visual feedback.
+ * Adds strict next-number progression blocking, backtracking, and invalid-move visual feedback.
  */
+// PUBLIC_INTERFACE
 export function useGameState({ size = 5, seed = 42 } = {}) {
+  /** Core game state: grid, path, interaction handlers, and validation */
   const [grid, setGrid] = useState(() => generateGrid(size, seed));
   const [path, setPath] = useState([]); // [{row, col}]
   const [history, setHistory] = useState([]); // stack of path snapshots
@@ -13,6 +15,7 @@ export function useGameState({ size = 5, seed = 42 } = {}) {
   const [completed, setCompleted] = useState(false);
   const [validation, setValidation] = useState({ ok: false, reason: '' });
   const [invalidAt, setInvalidAt] = useState(null); // {row, col} for visual feedback
+  const [started, setStarted] = useState(false); // Start button gating
 
   const gridSize = grid.length;
 
@@ -30,31 +33,10 @@ export function useGameState({ size = 5, seed = 42 } = {}) {
   }, []);
 
   // Determine next required digit based on digits seen in path
-  const nextRequiredDigit = useMemo(() => {
-    // Collect digits encountered along current path in order
-    let maxSeen = 0;
-    for (let i = 0; i < path.length; i++) {
-      const p = path[i];
-      const v = grid[p.row][p.col];
-      if (typeof v === 'number') {
-        if (v === maxSeen + 1) {
-          maxSeen = v;
-        } else if (v > maxSeen + 1) {
-          // Path already jumped ahead (shouldn't happen with blocking)
-          break;
-        }
-      }
-    }
-    // Find max digit present on the grid
-    let maxDigit = 0;
-    for (let r = 0; r < gridSize; r++) for (let c = 0; c < gridSize; c++) {
-      if (typeof grid[r][c] === 'number') maxDigit = Math.max(maxDigit, grid[r][c]);
-    }
-    const next = Math.min(maxSeen + 1, Math.max(1, maxDigit));
-    return next;
-  }, [grid, gridSize, path]);
+  const nextRequiredDigit = useMemo(() => nextRequiredDigitFromPath(grid, path), [grid, path]);
 
   const startPathAt = useCallback((row, col) => {
+    if (!started) return;
     if (!isInside(row, col)) return;
     setInvalidAt(null);
     const val = grid[row][col];
@@ -73,44 +55,52 @@ export function useGameState({ size = 5, seed = 42 } = {}) {
     addToHistory(next);
     setPath(next);
     setIsDrawing(true);
-  }, [addToHistory, grid, gridSize, isInside]);
+  }, [addToHistory, grid, gridSize, isInside, started]);
 
   const extendPathTo = useCallback((row, col) => {
+    if (!started) return;
     if (!isInside(row, col)) return;
     if (!isDrawing) return;
     setInvalidAt(null);
     const last = path[path.length - 1];
     if (last && (last.row === row && last.col === col)) return;
 
-    const dr = Math.abs(last.row - row);
-    const dc = Math.abs(last.col - col);
-    if (dr + dc !== 1) return; // only cardinal moves
-    if (pathSet.has(cellKey(row, col))) return; // no revisits
+    // Must be adjacent
+    if (!isAdjacent(last, { row, col })) return;
 
-    // Strict next-number progression: if the target cell is a number, it must equal nextRequiredDigit
+    // If moving to the previous cell in the path, treat as backtrack: pop last cell
+    if (path.length >= 2) {
+      const prev = path[path.length - 2];
+      if (prev.row === row && prev.col === col) {
+        const nextPath = path.slice(0, -1);
+        addToHistory(nextPath);
+        setPath(nextPath);
+        return;
+      }
+    }
+
+    // Prevent revisiting any other previously visited cell
+    if (pathSet.has(cellKey(row, col))) {
+      setInvalidAt({ row, col });
+      setValidation({ ok: false, reason: 'Cannot revisit a non-adjacent previous segment' });
+      return;
+    }
+
+    // Enforce ascending number constraint only when moving forward to a new cell
     const val = grid[row][col];
     if (typeof val === 'number') {
-      // Determine next required digit from current path
-      let maxSeen = 0;
-      for (let i = 0; i < path.length; i++) {
-        const p = path[i];
-        const pv = grid[p.row][p.col];
-        if (typeof pv === 'number') {
-          if (pv === maxSeen + 1) maxSeen = pv;
-        }
-      }
-      const mustBe = maxSeen + 1;
+      const mustBe = nextRequiredDigitFromPath(grid, path);
       if (val !== mustBe) {
         setInvalidAt({ row, col });
         setValidation({ ok: false, reason: `You must go to ${mustBe} next` });
-        return; // block extension
+        return;
       }
     }
 
     const next = [...path, { row, col }];
     addToHistory(next);
     setPath(next);
-  }, [addToHistory, grid, isDrawing, isInside, path, pathSet]);
+  }, [addToHistory, grid, isDrawing, isInside, path, pathSet, started]);
 
   const endPath = useCallback(() => {
     setIsDrawing(false);
@@ -147,6 +137,20 @@ export function useGameState({ size = 5, seed = 42 } = {}) {
     setValidation({ ok: false, reason: '' });
   }, []);
 
+  const startGame = useCallback(() => {
+    setStarted(true);
+  }, []);
+
+  const restartGame = useCallback(() => {
+    // Reset path but keep numbers/grid
+    setInvalidAt(null);
+    setPath([]);
+    setHistory([]);
+    setCompleted(false);
+    setValidation({ ok: false, reason: '' });
+    setStarted(true);
+  }, []);
+
   // Pointer/touch handling helpers
   const containerRef = useRef(null);
 
@@ -165,15 +169,16 @@ export function useGameState({ size = 5, seed = 42 } = {}) {
 
   const onPointerDown = useCallback((e) => {
     e.preventDefault();
+    if (!started) return;
     const p = getCellFromEvent(e.clientX, e.clientY);
     if (p) startPathAt(p.row, p.col);
-  }, [getCellFromEvent, startPathAt]);
+  }, [getCellFromEvent, startPathAt, started]);
 
   const onPointerMove = useCallback((e) => {
-    if (!isDrawing) return;
+    if (!started || !isDrawing) return;
     const p = getCellFromEvent(e.clientX, e.clientY);
     if (p) extendPathTo(p.row, p.col);
-  }, [extendPathTo, getCellFromEvent, isDrawing]);
+  }, [extendPathTo, getCellFromEvent, isDrawing, started]);
 
   const onPointerUp = useCallback(() => {
     if (isDrawing) endPath();
@@ -181,18 +186,20 @@ export function useGameState({ size = 5, seed = 42 } = {}) {
 
   // Touch events mapping
   const onTouchStart = useCallback((e) => {
+    if (!started) return;
     const t = e.touches[0];
     if (!t) return;
     const p = getCellFromEvent(t.clientX, t.clientY);
     if (p) startPathAt(p.row, p.col);
-  }, [getCellFromEvent, startPathAt]);
+  }, [getCellFromEvent, startPathAt, started]);
 
   const onTouchMove = useCallback((e) => {
+    if (!started) return;
     const t = e.touches[0];
     if (!t) return;
     const p = getCellFromEvent(t.clientX, t.clientY);
     if (p) extendPathTo(p.row, p.col);
-  }, [extendPathTo, getCellFromEvent]);
+  }, [extendPathTo, getCellFromEvent, started]);
 
   const onTouchEnd = useCallback(() => {
     if (isDrawing) endPath();
@@ -213,12 +220,16 @@ export function useGameState({ size = 5, seed = 42 } = {}) {
     validation,
     invalidAt,
     containerRef,
+    started,
     actions: {
       startPathAt,
       extendPathTo,
       endPath,
       undo,
-      reset
+      reset,
+      startGame,
+      restartGame,
+      setGrid, // expose in case of future size changes
     },
     handlers: {
       onPointerDown,

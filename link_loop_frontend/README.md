@@ -10,7 +10,7 @@ Goal: Connect numbers in ascending order (1 → 2 → 3 → … → 9) across a 
 - Responsive, accessible grid with pointer and touch support
 - Smooth SVG path animation for drawing
 - Undo and Reset controls
-- Timer with pause on completion
+- Timer with pause on completion and explicit Start/Restart controls (timer starts when Start is clicked)
 - Validation for cell coverage, adjacency, and digit order
 - Optional leaderboard integration via environment variable (backend is optional)
 - Minimal dependencies, no heavy UI framework
@@ -54,5 +54,5 @@ Create a `.env.local` as needed. Do not commit secrets.
 
 ## Notes
 
-- The sample puzzle generator scatters digits 1..9 randomly; it does not guarantee a uniquely-solvable puzzle. The validation enforces continuous coverage and digit order, so the game is fully playable.
-
+- Numbers 1..9 are placed deterministically along a serpentine Hamiltonian path that traverses all cells once; digits are spaced evenly along that path.
+- The game starts in a ready state; drawing is disabled and the timer is idle until you click Start. Restart clears the path and restarts the timer.

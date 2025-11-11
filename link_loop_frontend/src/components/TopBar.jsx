@@ -8,7 +8,11 @@ export default function TopBar({
   onReset,
   movesCount,
   showLeaderboard,
-  onLeaderboardClick
+  onLeaderboardClick,
+  started,
+  completed,
+  onStart,
+  onRestart
 }) {
   /** Displays timer, move counter, and actions */
   return (
@@ -25,16 +29,28 @@ export default function TopBar({
         </div>
       </div>
       <div className="right">
-        <button className="btn secondary" onClick={onUndo} aria-label="Undo last move">
-          Undo
-        </button>
-        <button className="btn danger" onClick={onReset} aria-label="Reset path">
-          Reset
-        </button>
-        {showLeaderboard && (
-          <button className="btn" onClick={onLeaderboardClick} aria-label="Open leaderboard">
-            Leaderboard
+        {!started && !completed && (
+          <button className="btn" onClick={onStart} aria-label="Start game">
+            Start
           </button>
+        )}
+        {(started || completed) && (
+          <>
+            <button className="btn secondary" onClick={onUndo} aria-label="Undo last move" disabled={!started || completed}>
+              Undo
+            </button>
+            <button className="btn danger" onClick={onReset} aria-label="Reset path" disabled={!started}>
+              Reset
+            </button>
+            <button className="btn" onClick={onRestart} aria-label="Restart game">
+              Restart
+            </button>
+            {showLeaderboard && (
+              <button className="btn" onClick={onLeaderboardClick} aria-label="Open leaderboard">
+                Leaderboard
+              </button>
+            )}
+          </>
         )}
       </div>
     </div>

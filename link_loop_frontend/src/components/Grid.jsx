@@ -25,7 +25,7 @@ const Grid = ({
 
   return (
     <div
-      className="grid-container"
+      className={`grid-container`}
       ref={containerRef}
       onPointerDown={handlers.onPointerDown}
       onPointerMove={handlers.onPointerMove}
