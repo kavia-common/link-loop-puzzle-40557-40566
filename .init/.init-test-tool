@@ -1,0 +1,4 @@
+{
+    "command": "npm run test",
+    "working_directory": "/home/kavia/workspace/code-generation/link-loop-puzzle-40557-40566/link_loop_frontend"
+}
