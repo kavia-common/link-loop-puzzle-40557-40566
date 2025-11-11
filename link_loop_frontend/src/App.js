@@ -79,6 +79,7 @@ function App() {
             path={game.path}
             containerRef={game.containerRef}
             handlers={game.handlers}
+            invalidAt={game.invalidAt}
           />
           <div className="rules" id="rules">
             <p>Connect numbers in ascending order with one continuous path that visits every cell exactly once.</p>

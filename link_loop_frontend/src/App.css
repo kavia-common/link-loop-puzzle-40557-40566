@@ -44,6 +44,14 @@ a { color: var(--c-primary); }
   flex-direction: column;
 }
 
+/* Allow main content to consume remaining viewport height below the sticky topbar */
+.app-shell .main {
+  flex: 1 1 auto;
+  display: grid;
+  grid-template-rows: 1fr;
+  align-content: start;
+}
+
 /* Top Bar */
 .topbar {
   position: sticky;
@@ -89,20 +97,36 @@ a { color: var(--c-primary); }
 .main {
   display: grid;
   place-items: start center;
-  padding: 24px 16px 48px;
+  padding: 16px;
+  /* Ensure main area can shrink so grid can fit */
+  min-height: 0;
 }
 
+/* Board container centers the square grid and computes max size based on viewport */
 .board-card {
   background: var(--c-surface);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
   padding: 16px;
-  width: min(92vw, 720px);
+  width: min(92vw, 820px);
+  /* Allow grid to size based on this container's content without forcing scroll */
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  /* Compute an available height: full viewport minus sticky topbar and paddings */
+  --topbar-height: 64px; /* approximate sticky bar height */
+  --vertical-margins: 32px; /* card outer space and main padding allowance */
+  /* Available height for the square grid area */
+  --available-h: calc(100vh - var(--topbar-height) - var(--vertical-margins));
 }
 
+/* The outer interactive container scales to fit within available space and width */
 .grid-container {
   position: relative;
-  width: 100%;
+  /* Compute a square that fits both width and available height */
+  --max-square: min(100%, var(--available-h));
+  width: min(100%, var(--max-square));
+  height: min(100%, var(--max-square));
   aspect-ratio: 1;
   border-radius: var(--radius-md);
   overflow: hidden;
@@ -110,6 +134,16 @@ a { color: var(--c-primary); }
   border: 1px solid var(--c-grid);
   touch-action: none;
   user-select: none;
+  /* For container queries like font sizing inside */
+  container-type: size;
+}
+
+/* Provide a max size ceiling for large screens to avoid overblown cells */
+@media (min-width: 1024px) {
+  .grid-container {
+    max-width: 720px;
+    max-height: 720px;
+  }
 }
 
 .grid {
@@ -125,6 +159,32 @@ a { color: var(--c-primary); }
   place-items: center;
   font-weight: 700;
   color: var(--c-text);
+  /* Cell font scales with container size using container-relative units */
+  font-size: clamp(12px, 4cqi, 18px);
+  transition: var(--transition-fast);
+}
+
+/* Lightweight invalid move feedback */
+@keyframes cell-shake {
+  10% { transform: translateX(-2%); }
+  20% { transform: translateX(2%); }
+  30% { transform: translateX(-2%); }
+  40% { transform: translateX(2%); }
+  50% { transform: translateX(-1%); }
+  60% { transform: translateX(1%); }
+  70% { transform: translateX(-1%); }
+  80% { transform: translateX(1%); }
+  90% { transform: translateX(0); }
+}
+
+.cell.invalid {
+  animation: cell-shake 250ms ease;
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.cell.invalid .digit {
+  border-color: var(--c-error);
+  color: var(--c-error);
 }
 .cell:nth-child(-n+1000) { /* keep specificity high, no-op */ }
 
@@ -162,6 +222,7 @@ a { color: var(--c-primary); }
   position: absolute;
   inset: 0;
   pointer-events: none;
+  z-index: 2;
 }
 
 /* Rules and info */

@@ -5,7 +5,8 @@ const Grid = ({
   grid,
   path,
   containerRef,
-  handlers
+  handlers,
+  invalidAt
 }) => {
   const size = grid.length;
 
@@ -46,10 +47,11 @@ const Grid = ({
           const r = Math.floor(i / size);
           const c = i % size;
           const val = grid[r][c];
+          const isInvalid = invalidAt && invalidAt.row === r && invalidAt.col === c;
           return (
             <div
               key={`${r}-${c}`}
-              className={`cell ${val ? 'has-number' : ''}`}
+              className={`cell ${val ? 'has-number' : ''} ${isInvalid ? 'invalid' : ''}`}
             >
               {val ? <span className="digit">{val}</span> : null}
             </div>
