@@ -24,7 +24,8 @@ const Grid = ({
     return cells;
   }, [grid, size]);
 
-  const inertProps = started
+  // Only attach interaction handlers when started
+  const interactiveProps = started
     ? {
         onPointerDown: handlers.onPointerDown,
         onPointerMove: handlers.onPointerMove,
@@ -36,20 +37,18 @@ const Grid = ({
         onPointerCancel: handlers.onPointerCancel,
         onPointerLeave: handlers.onPointerLeave
       }
-    : {
-        // Do not attach active handlers before start; keep container inert
-      };
+    : {};
 
   return (
     <div
       className={`grid-container`}
       ref={containerRef}
-      {...inertProps}
+      {...interactiveProps}
       role="application"
       aria-label="Link Loop grid"
       aria-disabled={!started}
       style={{
-        // Slightly dim and block pointer events before start to visually hide interaction
+        // Block pointer events when not started; keep visuals visible
         pointerEvents: started ? 'auto' : 'none',
         opacity: started ? 1 : 0.6
       }}
@@ -58,8 +57,7 @@ const Grid = ({
         className="grid"
         style={{
           gridTemplateColumns: `repeat(${size}, 1fr)`,
-          gridTemplateRows: `repeat(${size}, 1fr)`,
-          visibility: started ? 'visible' : 'hidden'
+          gridTemplateRows: `repeat(${size}, 1fr)`
         }}
       >
         {Array.from({ length: size * size }, (_, i) => {
@@ -77,8 +75,8 @@ const Grid = ({
           );
         })}
       </div>
-      {/* Path overlay */}
-      <div className="path-overlay" aria-hidden="true" style={{ visibility: started ? 'visible' : 'hidden' }}>
+      {/* Path overlay remains visible to show any pre-existing path/history */}
+      <div className="path-overlay" aria-hidden="true">
         <PathSVG path={path} cellSize={cellSize} size={size} padding={padding} />
       </div>
     </div>

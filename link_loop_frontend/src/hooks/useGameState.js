@@ -151,28 +151,30 @@ export function useGameState({ size = 5, seed = 42 } = {}) {
 
   // PUBLIC_INTERFACE
   const resetAll = useCallback(() => {
-    /** Fully reset to pre-game state and keep the grid hidden until Start is pressed again. */
+    /** Fully reset to pre-game state while keeping the current grid visible (non-interactive). */
     setIsDrawing(false);
     setInvalidAt(null);
     setPath([]);
     setHistory([]);
     setCompleted(false);
     setValidation({ ok: false, reason: '' });
-    // Return to pre-game "not started" state
+    // Return to pre-game "not started" state but do NOT change gridSeed,
+    // so the grid remains visible in pre-game.
     setStarted(false);
-    // Reset grid to initial seed so a fresh seed is only set when Start is pressed
-    setGridSeed(initialSeed);
-  }, [initialSeed]);
+  }, []);
 
   const startGame = useCallback(() => {
-    // Always re-roll to get variety between sessions
+    // When starting, re-roll to get a fresh randomized puzzle and enable interactions.
+    const newSeedA = randomSeed();
+    const nextSeed = (newSeedA === gridSeed) ? randomSeed() : newSeedA;
+    setGridSeed(nextSeed);
+    setIsDrawing(false);
+    setInvalidAt(null);
+    setPath([]);
+    setHistory([]);
+    setCompleted(false);
+    setValidation({ ok: false, reason: '' });
     setStarted(true);
-    setGridSeed(() => {
-      let newSeed = randomSeed();
-      // avoid zero-probability repeat by re-rolling if equal to current gridSeed
-      if (newSeed === gridSeed) newSeed = randomSeed();
-      return newSeed;
-    });
   }, [gridSeed]);
 
   const restartGame = useCallback(() => {

@@ -29,6 +29,7 @@ function App() {
 
   // Reset button should fully reset to pre-game state, not auto-start
   const onReset = () => {
+    // Return to pre-game state while keeping the grid visible and non-interactive
     game.actions.resetAll();
     pause();
     resetTimer();

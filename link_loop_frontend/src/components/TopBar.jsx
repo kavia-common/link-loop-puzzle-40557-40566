@@ -33,7 +33,7 @@ export default function TopBar({
         )}
         {(started || completed) && (
           <>
-            <button className="btn danger" onClick={onReset} aria-label="Reset path" disabled={!started}>
+            <button className="btn danger" onClick={onReset} aria-label="Reset to pre-game">
               Reset
             </button>
             <button className="btn" onClick={onRestart} aria-label="Restart game">
