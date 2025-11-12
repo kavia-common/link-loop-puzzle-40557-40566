@@ -17,21 +17,21 @@ export const theme = {
     muted: '#6B7280',
     gridLine: '#E5E7EB',
 
-    // New board/cell tokens
-    boardSurface: '#ffffff',
-    boardTintTop: 'rgba(37,99,235,0.08)',
-    boardTintBottom: 'rgba(255,255,255,0.95)',
-    cellBorder: '#D1D5DB',
-    cellHover: 'rgba(37,99,235,0.06)',
-    cellActive: 'rgba(37,99,235,0.14)',
-    selectionRing: 'rgba(37,99,235,0.45)',
-    cellAmber: 'rgba(245,158,11,0.16)',
-    cellAmberBorder: 'rgba(245,158,11,0.55)'
+    // New board/cell tokens (darkened board for higher contrast)
+    boardSurface: '#0f172a', // slate-900ish
+    boardTintTop: 'rgba(30,58,138,0.28)', // blue-900/28%
+    boardTintBottom: 'rgba(15,23,42,0.92)', // slate-900/92%
+    cellBorder: '#1f2937', // gray-800
+    cellHover: 'rgba(37,99,235,0.18)',
+    cellActive: 'rgba(37,99,235,0.28)',
+    selectionRing: 'rgba(96,165,250,0.65)', // blue-400 ring for visibility
+    cellAmber: 'rgba(245,158,11,0.28)',
+    cellAmberBorder: 'rgba(245,158,11,0.75)'
   },
   shadow: {
-    sm: '0 1px 2px rgba(0,0,0,0.06)',
-    md: '0 4px 12px rgba(0,0,0,0.08)',
-    lg: '0 10px 24px rgba(0,0,0,0.12)',
+    sm: '0 1px 2px rgba(0,0,0,0.20)',
+    md: '0 4px 12px rgba(0,0,0,0.28)',
+    lg: '0 10px 24px rgba(0,0,0,0.35)',
   },
   radius: {
     sm: '8px',

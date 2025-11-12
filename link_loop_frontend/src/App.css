@@ -11,19 +11,20 @@
   --c-grid: #E5E7EB;
 
   /* New tokens specific to board/cell surfaces */
-  --board-surface: #ffffff;                 /* elevated panel */
-  --board-tint-top: rgba(37,99,235,0.08);   /* subtle ocean gradient */
-  --board-tint-bottom: rgba(255,255,255,0.95);
-  --cell-border: #D1D5DB;                   /* slightly darker than grid */
-  --cell-hover-bg: rgba(37,99,235,0.06);
-  --cell-active-bg: rgba(37,99,235,0.14);
-  --cell-focus-ring: rgba(37,99,235,0.45);
-  --cell-amber: rgba(245,158,11,0.16);
-  --cell-amber-border: rgba(245,158,11,0.55);
+  /* Darker neutral/blue-tinted surface for improved contrast */
+  --board-surface: #0f172a;                 /* slate-900ish as panel base */
+  --board-tint-top: rgba(30,58,138,0.28);   /* deeper ocean gradient start (blue-900 @ ~28%) */
+  --board-tint-bottom: rgba(15,23,42,0.92); /* near-surface dark with slight transparency */
+  --cell-border: #1f2937;                   /* gray-800 for clearer grid lines on dark */
+  --cell-hover-bg: rgba(37,99,235,0.18);    /* stronger hover visible on dark */
+  --cell-active-bg: rgba(37,99,235,0.28);   /* stronger active state */
+  --cell-focus-ring: rgba(96,165,250,0.65); /* brighter ring for accessibility */
+  --cell-amber: rgba(245,158,11,0.28);      /* ensure numbered hover remains visible */
+  --cell-amber-border: rgba(245,158,11,0.75);
 
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.06);
-  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
-  --shadow-lg: 0 10px 24px rgba(0,0,0,0.12);
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.20);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.28);
+  --shadow-lg: 0 10px 24px rgba(0,0,0,0.35);
 
   --radius-sm: 8px;
   --radius-md: 12px;
@@ -125,11 +126,11 @@ a { color: var(--c-primary); }
   justify-items: center;
   gap: 14px;
 
-  /* Decorative subtle background to lift board off page background */
+  /* Decorative background to lift board off page background (darkened) */
   background-image:
-    radial-gradient(1200px 400px at 50% -10%, rgba(37,99,235,0.10), transparent),
-    linear-gradient(180deg, rgba(255,255,255,1), rgba(255,255,255,0.96));
-  border: 1px solid #eef2f7;
+    radial-gradient(1200px 400px at 50% -10%, rgba(59,130,246,0.22), transparent), /* blue-500/22% glow */
+    linear-gradient(180deg, rgba(15,23,42,1), rgba(15,23,42,0.96)); /* slate-900 base w/ slight fade */
+  border: 1px solid rgba(148,163,184,0.18); /* slate-400/18% */
 
   --topbar-height: 64px; /* approximate sticky bar height */
   --vertical-margins: 32px; /* card outer space and main padding allowance */
@@ -148,8 +149,8 @@ a { color: var(--c-primary); }
   border-radius: var(--radius-lg);
   overflow: hidden;
   background: linear-gradient(180deg, var(--board-tint-top), var(--board-tint-bottom));
-  border: 1px solid var(--c-grid);
-  box-shadow: 0 6px 14px rgba(2,6,23,0.08), inset 0 1px 0 rgba(255,255,255,0.4);
+  border: 1px solid rgba(148,163,184,0.25); /* slate-400/25% for visible edge */
+  box-shadow: 0 8px 18px rgba(2,6,23,0.22), inset 0 1px 0 rgba(255,255,255,0.08);
   touch-action: none;
   user-select: none;
 
@@ -213,7 +214,7 @@ a { color: var(--c-primary); }
 
 .cell.invalid {
   animation: cell-shake 250ms ease;
-  background: rgba(239, 68, 68, 0.08);
+  background: rgba(239, 68, 68, 0.14); /* stronger on dark surface */
 }
 
 .cell.invalid .digit {
@@ -227,9 +228,9 @@ a { color: var(--c-primary); }
 
 /* Numbered cells: amber highlight chip with clear border for readability */
 .grid > .cell.has-number .digit {
-  background: #ffffff;
+  background: #ffffff; /* maintain high contrast against dark board */
   border: 2px solid var(--c-secondary);
-  color: var(--c-text);
+  color: var(--c-text); /* #111827 */
   padding: 4px 10px;
   border-radius: 14px;
   box-shadow: var(--shadow-sm);
