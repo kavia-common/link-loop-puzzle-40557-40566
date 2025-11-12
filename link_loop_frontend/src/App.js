@@ -6,7 +6,7 @@ import { useTimer } from './hooks/useTimer';
 import Grid from './components/Grid';
 import TopBar from './components/TopBar';
 import CompletionModal from './components/CompletionModal';
-import { formatSeconds, formatSecondsMs } from './utils/gameUtils';
+import { formatSeconds } from './utils/gameUtils';
 import { getBestTimeMs, setBestTimeMs } from './utils/bestTime';
 
 // PUBLIC_INTERFACE
@@ -21,28 +21,40 @@ function App() {
   const game = useGameState({ size, seed: 1337 });
   const { seconds, pause, resume, reset: resetTimer } = useTimer(false);
 
-  // Track best time locally for completion modal
+  // Track best time and previous best for completion modal
   const [bestTimeMs, setBestMsState] = useState(() => getBestTimeMs());
+  const [prevBestMs, setPrevBestMs] = useState(() => getBestTimeMs());
+  const [currentMs, setCurrentMs] = useState(null);
   const [isNewBest, setIsNewBest] = useState(false);
 
   // Pause timer when game completes and compute/update best time state
   useEffect(() => {
     if (game.completed) {
       pause();
-      const currentMs = Math.max(0, Math.round(seconds * 1000));
+
+      // Derive the current run time in ms
+      const nowMs = Math.max(0, Math.round(seconds * 1000));
+      setCurrentMs(nowMs);
+
+      // Read previous best BEFORE any updates
       const stored = getBestTimeMs();
-      if (stored == null || currentMs < stored) {
-        // new best
-        setBestTimeMs(currentMs);
-        setBestMsState(currentMs);
+      setPrevBestMs(stored);
+
+      // Compare and update flags/state, writing to storage only after prev is captured
+      if (stored == null || nowMs < stored) {
         setIsNewBest(true);
+        // Persist new best, but keep prevBestMs as the old value in state
+        setBestTimeMs(nowMs);
+        setBestMsState(nowMs);
       } else {
-        setBestMsState(stored);
         setIsNewBest(false);
+        // Keep best state as stored value for display/reference
+        setBestMsState(stored);
       }
     } else {
       // clear "new best" flag when leaving completion state
       setIsNewBest(false);
+      setCurrentMs(null);
     }
   }, [game.completed, pause, seconds]);
 
@@ -52,6 +64,7 @@ function App() {
     game.actions.resetAll();
     pause();
     resetTimer();
+    // Do not touch best/prevBest here
   };
 
   const onStart = () => {
@@ -75,6 +88,7 @@ function App() {
     game.actions.resetAll();
     pause();
     resetTimer();
+    // Do not alter prev/best on close
   };
 
   const movesCount = useMemo(() => Math.max(0, game.history.length - 1), [game.history.length]);
@@ -113,8 +127,9 @@ function App() {
       </main>
       <CompletionModal
         open={game.completed}
-        seconds={seconds}
-        previousBestMs={bestTimeMs}
+        // Provide both the current run time and the previous best (old value)
+        currentTimeMs={currentMs}
+        prevBestOldMs={prevBestMs}
         isNewBest={isNewBest}
         onClose={onCloseModal}
         onPlayAgain={onPlayAgain}

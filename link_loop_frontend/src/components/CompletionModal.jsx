@@ -18,13 +18,17 @@ function getOrCreateOverlayRoot() {
 }
 
 // PUBLIC_INTERFACE
-export default function CompletionModal({ open, seconds, previousBestMs, isNewBest, onClose, onPlayAgain }) {
+export default function CompletionModal({ open, currentTimeMs, prevBestOldMs, isNewBest, onClose, onPlayAgain }) {
   /** Shown when puzzle is completed successfully, rendered via a portal above all content. */
   if (!open) return null;
 
-  const currentLabel = formatSecondsMs(seconds);
-  const previousLabel = (typeof previousBestMs === 'number' && previousBestMs > 0)
-    ? formatSecondsMs(previousBestMs / 1000)
+  // Guard and format values consistently
+  const currentLabel = (typeof currentTimeMs === 'number' && currentTimeMs >= 0)
+    ? formatSecondsMs(currentTimeMs / 1000)
+    : '—';
+
+  const previousLabel = (typeof prevBestOldMs === 'number' && prevBestOldMs > 0)
+    ? formatSecondsMs(prevBestOldMs / 1000)
     : '—';
 
   const modal = (
