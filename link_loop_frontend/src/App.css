@@ -135,10 +135,14 @@ a { color: var(--c-primary); }
   border-radius: var(--radius-md);
   overflow: hidden;
 
-  /* Distinct, theme-consistent board background */
-  background: linear-gradient(180deg, rgba(37,99,235,0.06), rgba(255,255,255,0.95)), var(--c-surface-tint);
+  /* Ocean Professional subtle gradient background:
+     approximates "from-blue-500/10 to-gray-50" while remaining lightweight.
+     Keep a soft overlay to avoid washing out grid borders. */
+  background:
+    linear-gradient(180deg, rgba(37,99,235,0.10), rgba(249,250,251,0.95)), /* blue-500/10 -> gray-50 */
+    var(--c-surface-tint);
 
-  /* Stronger, higher-contrast border */
+  /* Stronger, higher-contrast border to preserve grid readability */
   border: 2px solid var(--c-grid-strong);
 
   /* Subtle elevation */
@@ -150,6 +154,7 @@ a { color: var(--c-primary); }
   /* For container queries like font sizing inside */
   container-type: size;
 
+  /* Keep transitions lightweight */
   transition: border-color var(--transition-fast), background-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
@@ -170,6 +175,7 @@ a { color: var(--c-primary); }
 /* Increase grid line contrast to ensure visibility */
 .cell {
   background: #fff;
+  /* Keep strong borders to remain readable over gradient */
   border-right: 2px solid var(--c-grid-strong);
   border-bottom: 2px solid var(--c-grid-strong);
   display: grid;
@@ -184,6 +190,7 @@ a { color: var(--c-primary); }
 
 /* Hover/active styles when board is enabled */
 .grid-container[aria-disabled="false"] .cell:hover {
+  /* Keep a subtle hover that reads well over the gradient */
   background: rgba(37,99,235,0.06);
   border-color: var(--c-grid-strong);
   box-shadow: var(--shadow-sm);
