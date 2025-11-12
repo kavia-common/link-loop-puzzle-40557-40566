@@ -348,6 +348,19 @@ export function formatSeconds(seconds) {
 }
 
 /**
+ * Format seconds as mm:ss.SSS (with milliseconds)
+ */
+// PUBLIC_INTERFACE
+export function formatSecondsMs(seconds) {
+  /** Returns a string like 02:15.237 given seconds as floating value. */
+  const totalMs = Math.max(0, Math.round(seconds * 1000));
+  const m = Math.floor(totalMs / 60000);
+  const s = Math.floor((totalMs % 60000) / 1000);
+  const ms = totalMs % 1000;
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${String(ms).padStart(3, '0')}`;
+}
+
+/**
  * Get a high-entropy random seed using crypto if available, else Math.random fallback.
  */
 // PUBLIC_INTERFACE

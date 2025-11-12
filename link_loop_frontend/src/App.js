@@ -6,7 +6,8 @@ import { useTimer } from './hooks/useTimer';
 import Grid from './components/Grid';
 import TopBar from './components/TopBar';
 import CompletionModal from './components/CompletionModal';
-import { formatSeconds } from './utils/gameUtils';
+import { formatSeconds, formatSecondsMs } from './utils/gameUtils';
+import { getBestTimeMs, setBestTimeMs } from './utils/bestTime';
 
 // PUBLIC_INTERFACE
 function App() {
@@ -20,12 +21,30 @@ function App() {
   const game = useGameState({ size, seed: 1337 });
   const { seconds, pause, resume, reset: resetTimer } = useTimer(false);
 
-  // Pause timer when game completes
+  // Track best time locally for completion modal
+  const [bestTimeMs, setBestMsState] = useState(() => getBestTimeMs());
+  const [isNewBest, setIsNewBest] = useState(false);
+
+  // Pause timer when game completes and compute/update best time state
   useEffect(() => {
     if (game.completed) {
       pause();
+      const currentMs = Math.max(0, Math.round(seconds * 1000));
+      const stored = getBestTimeMs();
+      if (stored == null || currentMs < stored) {
+        // new best
+        setBestTimeMs(currentMs);
+        setBestMsState(currentMs);
+        setIsNewBest(true);
+      } else {
+        setBestMsState(stored);
+        setIsNewBest(false);
+      }
+    } else {
+      // clear "new best" flag when leaving completion state
+      setIsNewBest(false);
     }
-  }, [game.completed, pause]);
+  }, [game.completed, pause, seconds]);
 
   // Reset button should fully reset to pre-game state, not auto-start
   const onReset = () => {
@@ -95,6 +114,8 @@ function App() {
       <CompletionModal
         open={game.completed}
         seconds={seconds}
+        previousBestMs={bestTimeMs}
+        isNewBest={isNewBest}
         onClose={onCloseModal}
         onPlayAgain={onPlayAgain}
       />

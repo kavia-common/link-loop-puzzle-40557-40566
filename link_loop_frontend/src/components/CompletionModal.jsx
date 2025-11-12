@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { formatSeconds } from '../utils/gameUtils';
+import { formatSecondsMs } from '../utils/gameUtils';
 
 /**
  * Ensure there is a single overlay root in the document for portals.
@@ -18,9 +18,14 @@ function getOrCreateOverlayRoot() {
 }
 
 // PUBLIC_INTERFACE
-export default function CompletionModal({ open, seconds, onClose, onPlayAgain }) {
+export default function CompletionModal({ open, seconds, previousBestMs, isNewBest, onClose, onPlayAgain }) {
   /** Shown when puzzle is completed successfully, rendered via a portal above all content. */
   if (!open) return null;
+
+  const currentLabel = formatSecondsMs(seconds);
+  const previousLabel = (typeof previousBestMs === 'number' && previousBestMs > 0)
+    ? formatSecondsMs(previousBestMs / 1000)
+    : '—';
 
   const modal = (
     <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label="Puzzle completed">
@@ -30,7 +35,37 @@ export default function CompletionModal({ open, seconds, onClose, onPlayAgain })
         </div>
         <div className="modal-body">
           <p>You completed the Link Loop.</p>
-          <p>Time: <strong>{formatSeconds(seconds)}</strong></p>
+
+          <div style={{ display: 'grid', gap: 8, marginTop: 8 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span>Current Time</span>
+              <strong>{currentLabel}</strong>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--c-muted)' }}>
+              <span>Previous Best</span>
+              <strong>{previousLabel}</strong>
+            </div>
+          </div>
+
+          {isNewBest && (
+            <div
+              style={{
+                marginTop: 12,
+                padding: '8px 12px',
+                background: 'linear-gradient(90deg, rgba(245,158,11,0.12), rgba(37,99,235,0.08))',
+                border: '1px solid var(--c-grid)',
+                borderRadius: '12px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                fontWeight: 700,
+                color: 'var(--c-secondary)'
+              }}
+              aria-live="polite"
+            >
+              🏅 New best time unlocked!
+            </div>
+          )}
         </div>
         <div className="modal-actions">
           <button className="btn" onClick={onPlayAgain}>Play Again</button>
