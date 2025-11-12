@@ -10,9 +10,13 @@
  * Numbers are placed at spaced indices along this path in ascending order,
  * but the specific spacing is randomized using the provided seed (or crypto).
  */
-// PUBLIC_INTERFACE
+ // PUBLIC_INTERFACE
 export function generateGrid(size = 5, seed = 42) {
-  /** Generate a grid with digits along a randomized Hamiltonian path. Uses seed to randomize path and digit positions. */
+  /** Generate a grid with digits along a randomized Hamiltonian path. Uses seed to randomize path and digit positions.
+   * Requirements:
+   * - Always place digits 1..9 (or fewer if grid too small) along the canonical path.
+   * - Ensure that digit 9 is placed on the last node of the canonical path.
+   */
   const grid = Array.from({ length: size }, () =>
     Array.from({ length: size }, () => null)
   );
@@ -22,38 +26,48 @@ export function generateGrid(size = 5, seed = 42) {
   const maxDigit = Math.min(9, total);
   if (maxDigit <= 0) return grid;
 
-  // Choose spaced indices along the path, but add randomness to spacing.
+  // Choose spaced indices along the path for digits 1..maxDigit-1 (reserve last index for 9).
   // Strategy:
-  // 1) Compute base even-spaced indices.
-  // 2) Add small random jitter per index and clamp.
+  // 1) Compute base even-spaced indices across [0, total-2] (exclude last so 9 can be at total-1).
+  // 2) Add small random jitter per index and clamp to [0, total-2].
   // 3) Sort and force strictly increasing to maintain order.
   const rng = createRng(seed);
+  const lastIndex = total - 1;
+  const digitCountBeforeLast = Math.max(0, maxDigit - 1);
+
   const base = [];
-  for (let i = 0; i < maxDigit; i++) {
-    const idx = maxDigit === 1 ? 0 : Math.round((i * (total - 1)) / (maxDigit - 1));
+  for (let i = 0; i < digitCountBeforeLast; i++) {
+    const denom = Math.max(1, digitCountBeforeLast - 1);
+    const idx = digitCountBeforeLast === 1
+      ? 0
+      : Math.round((i * (total - 2)) / denom); // ensure within [0, total-2]
     base.push(idx);
   }
-  // Apply jitter up to ±floor(total/(maxDigit*3)) to create variety while preserving feasibility
+
+  // Apply jitter up to ±floor(total/(maxDigit*3)) while keeping within [0, total-2]
   const jitterMax = Math.max(1, Math.floor(total / (maxDigit * 3)));
   const jittered = base.map((idx, i) => {
-    // keep first (1) near start and last near end by reducing jitter for extremes
-    const scale = (i === 0 || i === maxDigit - 1) ? 0.4 : 1.0;
+    // keep first (1) near start by reducing jitter; rest can vary more
+    const scale = (i === 0) ? 0.4 : 1.0;
     const j = Math.floor((rng() * 2 - 1) * jitterMax * scale);
-    return Math.min(total - 1, Math.max(0, idx + j));
+    return Math.min(total - 2, Math.max(0, idx + j));
   });
+
   // Sort and strictly increase, fixing collisions
   jittered.sort((a, b) => a - b);
   for (let i = 1; i < jittered.length; i++) {
     if (jittered[i] <= jittered[i - 1]) jittered[i] = jittered[i - 1] + 1;
-    if (jittered[i] > total - 1) jittered[i] = total - 1;
+    if (jittered[i] > total - 2) jittered[i] = total - 2;
   }
-  // If pushing made last indices collide with end, walk backwards to spread
+  // Walk backwards to spread if needed
   for (let i = jittered.length - 2; i >= 0; i--) {
     if (jittered[i] >= jittered[i + 1]) jittered[i] = Math.max(0, jittered[i + 1] - 1);
   }
 
+  // Place digits 1..(maxDigit-1) at jittered indices and 9 (or maxDigit) at the last node
   for (let d = 1; d <= maxDigit; d++) {
-    const { row, col } = path[jittered[d - 1]];
+    const indexOnPath = (d === maxDigit) ? lastIndex : jittered[d - 1];
+    const { row, col } = path[indexOnPath];
     grid[row][col] = d;
   }
   return grid;
@@ -241,12 +255,14 @@ export function validatePath(grid, path) {
     if (!isNeighbor) return { ok: false, reason: 'Non-adjacent cells in path' };
   }
 
-  // Ensure ascending digits order
+  // Collect digits in grid and determine max digit present
   const digitsInGrid = [];
   for (let r = 0; r < size; r++) for (let c = 0; c < size; c++) {
     if (grid[r][c]) digitsInGrid.push(grid[r][c]);
   }
   const maxDigit = Math.max(...digitsInGrid, 0);
+
+  // Ensure ascending digits order along the path
   const positions = {};
   path.forEach((p, idx) => {
     const val = grid[p.row][p.col];
@@ -260,6 +276,13 @@ export function validatePath(grid, path) {
     if (positions[d] > positions[d + 1]) {
       return { ok: false, reason: 'Digits are not in ascending order along the path' };
     }
+  }
+
+  // Require that the final cell in the path is the max digit (i.e., 9 when present)
+  const last = path[path.length - 1];
+  const lastVal = grid[last.row][last.col];
+  if (lastVal !== maxDigit) {
+    return { ok: false, reason: `Path must end on ${maxDigit}` };
   }
 
   return { ok: true, reason: 'Valid path' };

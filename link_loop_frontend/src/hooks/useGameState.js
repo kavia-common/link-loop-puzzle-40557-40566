@@ -110,7 +110,7 @@ export function useGameState({ size = 5, seed = 42 } = {}) {
 
   const endPath = useCallback(() => {
     setIsDrawing(false);
-    // If finished path equals all cells, validate
+    // If finished path equals all cells, validate and ensure end cell is the final digit (9 when present)
     if (path.length === gridSize * gridSize) {
       const res = validatePath(grid, path);
       setValidation(res);
