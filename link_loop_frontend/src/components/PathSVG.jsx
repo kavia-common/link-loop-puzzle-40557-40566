@@ -24,8 +24,6 @@ const PathSVG = ({ path, cellSize, padding = 0, size, color = 'var(--c-primary)'
     });
   }, [d]);
 
-  const strokeWidth = Math.max(3, cellSize * 0.15);
-
   return (
     <svg
       width="100%"
@@ -34,21 +32,14 @@ const PathSVG = ({ path, cellSize, padding = 0, size, color = 'var(--c-primary)'
       preserveAspectRatio="none"
       aria-hidden="true"
     >
-      {/* Subtle shadow for path to improve visibility over light tiles */}
-      <defs>
-        <filter id="pathShadow" x="-20%" y="-20%" width="140%" height="140%">
-          <feDropShadow dx="0" dy="1.5" stdDeviation="1.2" floodColor="rgba(0,0,0,0.18)" />
-        </filter>
-      </defs>
       <path
         ref={pathRef}
         d={d}
         fill="none"
         stroke={color}
-        strokeWidth={strokeWidth}
+        strokeWidth={Math.max(3, cellSize * 0.15)}
         strokeLinecap="round"
         strokeLinejoin="round"
-        filter="url(#pathShadow)"
       />
     </svg>
   );
