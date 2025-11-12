@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { generateGrid, validatePath, isAdjacent, nextRequiredDigitFromPath } from '../utils/gameUtils';
+import { generateGrid, validatePath, isAdjacent, nextRequiredDigitFromPath, randomSeed } from '../utils/gameUtils';
 
 /**
  * Hook encapsulating the Link Loop game state and interactions.
@@ -8,7 +8,8 @@ import { generateGrid, validatePath, isAdjacent, nextRequiredDigitFromPath } fro
 // PUBLIC_INTERFACE
 export function useGameState({ size = 5, seed = 42 } = {}) {
   /** Core game state: grid, path, interaction handlers, and validation */
-  const [grid, setGrid] = useState(() => generateGrid(size, seed));
+  const [gridSeed, setGridSeed] = useState(seed);
+  const [grid, setGrid] = useState(() => generateGrid(size, gridSeed));
   const [path, setPath] = useState([]); // [{row, col}]
   const [history, setHistory] = useState([]); // stack of path snapshots
   const [isDrawing, setIsDrawing] = useState(false);
@@ -16,6 +17,11 @@ export function useGameState({ size = 5, seed = 42 } = {}) {
   const [validation, setValidation] = useState({ ok: false, reason: '' });
   const [invalidAt, setInvalidAt] = useState(null); // {row, col} for visual feedback
   const [started, setStarted] = useState(false); // Start button gating
+
+  // Rebuild grid when size or seed changes intentionally
+  useEffect(() => {
+    setGrid(generateGrid(size, gridSeed));
+  }, [size, gridSeed]);
 
   const gridSize = grid.length;
 
@@ -129,27 +135,30 @@ export function useGameState({ size = 5, seed = 42 } = {}) {
     setValidation({ ok: false, reason: '' });
   }, [history]);
 
-  const reset = useCallback(() => {
+  const clearTransientState = useCallback(() => {
     setInvalidAt(null);
     setPath([]);
     setHistory([]);
     setCompleted(false);
     setValidation({ ok: false, reason: '' });
   }, []);
+
+  const reset = useCallback(() => {
+    // Reset path only; keep current grid (useful for "Reset path" action)
+    clearTransientState();
+  }, [clearTransientState]);
 
   const startGame = useCallback(() => {
     setStarted(true);
   }, []);
 
   const restartGame = useCallback(() => {
-    // Reset path but keep numbers/grid
-    setInvalidAt(null);
-    setPath([]);
-    setHistory([]);
-    setCompleted(false);
-    setValidation({ ok: false, reason: '' });
+    // Full replay: new randomized grid (fresh seed) and cleared state
+    const newSeed = randomSeed();
+    setGridSeed(newSeed);
+    clearTransientState();
     setStarted(true);
-  }, []);
+  }, [clearTransientState]);
 
   // Pointer/touch handling helpers
   const containerRef = useRef(null);

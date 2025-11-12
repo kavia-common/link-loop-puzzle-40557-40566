@@ -17,6 +17,7 @@ function App() {
   }, []);
 
   const [size] = useState(5); // can be configurable in future
+  // Initial load uses a default seed; subsequent restarts generate a fresh random seed inside the hook
   const game = useGameState({ size, seed: 1337 });
   const { seconds, pause, resume, reset: resetTimer, running } = useTimer(false);
 

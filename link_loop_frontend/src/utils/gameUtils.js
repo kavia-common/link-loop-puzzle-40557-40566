@@ -1,16 +1,18 @@
 //
+//
 // Core utilities for Link Loop game
 //
 
 /**
  * Generate a square grid of size n where digits 1..9 (or fewer if grid too small)
- * are placed along a single deterministic serpentine Hamiltonian path.
+ * are placed along a single serpentine Hamiltonian path, at randomized spaced positions.
  * The serpentine path covers every cell exactly once without crossings.
- * Numbers are placed at evenly spaced indices along this path in ascending order.
+ * Numbers are placed at spaced indices along this path in ascending order,
+ * but the specific spacing is randomized using the provided seed (or crypto).
  */
 // PUBLIC_INTERFACE
 export function generateGrid(size = 5, seed = 42) {
-  /** Generate a grid with digits along a serpentine Hamiltonian path. Seed retained for forward compat, unused here. */
+  /** Generate a grid with digits along a serpentine Hamiltonian path. Uses seed to randomize digit positions. */
   const grid = Array.from({ length: size }, () =>
     Array.from({ length: size }, () => null)
   );
@@ -19,22 +21,38 @@ export function generateGrid(size = 5, seed = 42) {
   const maxDigit = Math.min(9, total);
   if (maxDigit <= 0) return grid;
 
-  // Evenly space digits including placing 1 at index 0 and maxDigit at the end proportionally.
-  // Compute indices as round(i * (total-1) / (maxDigit-1)) for i in [0..maxDigit-1]
-  const indices = [];
+  // Choose spaced indices along the path, but add randomness to spacing.
+  // Strategy:
+  // 1) Compute base even-spaced indices.
+  // 2) Add small random jitter per index and clamp.
+  // 3) Sort and force strictly increasing to maintain order.
+  const rng = createRng(seed);
+  const base = [];
   for (let i = 0; i < maxDigit; i++) {
-    const idx =
-      maxDigit === 1 ? 0 : Math.round((i * (total - 1)) / (maxDigit - 1));
-    indices.push(idx);
+    const idx = maxDigit === 1 ? 0 : Math.round((i * (total - 1)) / (maxDigit - 1));
+    base.push(idx);
   }
-  // Ensure indices are strictly increasing and within bounds
-  for (let i = 1; i < indices.length; i++) {
-    if (indices[i] <= indices[i - 1]) indices[i] = indices[i - 1] + 1;
-    if (indices[i] > total - 1) indices[i] = total - 1;
+  // Apply jitter up to ±floor(total/(maxDigit*3)) to create variety while preserving feasibility
+  const jitterMax = Math.max(1, Math.floor(total / (maxDigit * 3)));
+  const jittered = base.map((idx, i) => {
+    // keep first (1) near start and last near end by reducing jitter for extremes
+    const scale = (i === 0 || i === maxDigit - 1) ? 0.4 : 1.0;
+    const j = Math.floor((rng() * 2 - 1) * jitterMax * scale);
+    return Math.min(total - 1, Math.max(0, idx + j));
+  });
+  // Sort and strictly increase, fixing collisions
+  jittered.sort((a, b) => a - b);
+  for (let i = 1; i < jittered.length; i++) {
+    if (jittered[i] <= jittered[i - 1]) jittered[i] = jittered[i - 1] + 1;
+    if (jittered[i] > total - 1) jittered[i] = total - 1;
+  }
+  // If pushing made last indices collide with end, walk backwards to spread
+  for (let i = jittered.length - 2; i >= 0; i--) {
+    if (jittered[i] >= jittered[i + 1]) jittered[i] = Math.max(0, jittered[i + 1] - 1);
   }
 
   for (let d = 1; d <= maxDigit; d++) {
-    const { row, col } = path[indices[d - 1]];
+    const { row, col } = path[jittered[d - 1]];
     grid[row][col] = d;
   }
   return grid;
@@ -174,7 +192,39 @@ export function formatSeconds(seconds) {
 }
 
 /**
- * Fisher-Yates shuffle with injected RNG function
+ * Get a high-entropy random seed using crypto if available, else Math.random fallback.
+ */
+// PUBLIC_INTERFACE
+export function randomSeed() {
+  /** Returns a 32-bit unsigned integer seed using crypto if available. */
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    const buf = new Uint32Array(1);
+    crypto.getRandomValues(buf);
+    return buf[0] >>> 0;
+  } else {
+    return Math.floor(Math.random() * 0xFFFFFFFF) >>> 0;
+  }
+}
+
+/**
+ * Create RNG from a seed. If seed is undefined, use crypto/Math for non-deterministic RNG.
+ */
+function createRng(seed) {
+  if (typeof seed === 'number' && Number.isFinite(seed)) {
+    return mulberry32(seed >>> 0);
+  }
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    return () => {
+      const buf = new Uint32Array(1);
+      crypto.getRandomValues(buf);
+      return (buf[0] >>> 0) / 4294967296;
+    };
+  }
+  return Math.random;
+}
+
+/**
+ * Fisher-Yates shuffle with injected RNG function (currently unused but kept for utility).
  */
 function shuffleInPlace(arr, rng) {
   for (let i = arr.length - 1; i > 0; i--) {
