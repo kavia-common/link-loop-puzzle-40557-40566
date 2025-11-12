@@ -233,6 +233,11 @@ a { color: var(--c-primary); }
   color: var(--c-muted);
   font-size: 14px;
 }
+.rules em {
+  font-style: normal;
+  color: var(--c-text);
+  font-weight: 600;
+}
 .validation { color: var(--c-error); }
 .success { color: var(--c-secondary); font-weight: 700; }
 

@@ -88,7 +88,7 @@ export function useGameState({ size = 5, seed = 42 } = {}) {
     // Prevent revisiting any other previously visited cell
     if (pathSet.has(cellKey(row, col))) {
       setInvalidAt({ row, col });
-      setValidation({ ok: false, reason: 'Cannot revisit a non-adjacent previous segment' });
+      setValidation({ ok: false, reason: 'Cannot revisit a previous cell' });
       return;
     }
 
@@ -149,7 +149,14 @@ export function useGameState({ size = 5, seed = 42 } = {}) {
   }, [clearTransientState]);
 
   const startGame = useCallback(() => {
+    // On first start, if using a default seed, re-roll to get variety between sessions
     setStarted(true);
+    setGridSeed((prev) => {
+      // If prev is the initial provided seed, randomize once to avoid always same layout
+      const newSeed = randomSeed();
+      if (newSeed === prev) return randomSeed();
+      return newSeed;
+    });
   }, []);
 
   const restartGame = useCallback(() => {

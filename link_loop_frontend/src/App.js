@@ -17,7 +17,7 @@ function App() {
   }, []);
 
   const [size] = useState(5); // can be configurable in future
-  // Initial load uses a default seed; subsequent restarts generate a fresh random seed inside the hook
+  // Use an initial seed, but the hook randomizes on Start/Restart for variety
   const game = useGameState({ size, seed: 1337 });
   const { seconds, pause, resume, reset: resetTimer, running } = useTimer(false);
 
@@ -97,7 +97,7 @@ function App() {
             invalidAt={game.invalidAt}
           />
           <div className="rules" id="rules">
-            <p>Connect numbers in ascending order with one continuous path that visits every cell exactly once.</p>
+            <p>Connect numbers in ascending order with one continuous path that visits every cell exactly once. Vertical, horizontal, and mixed turns are all valid.</p>
             {!game.completed && game.validation.reason && (
               <p className="validation">{game.validation.reason}</p>
             )}

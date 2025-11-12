@@ -5,18 +5,19 @@
 
 /**
  * Generate a square grid of size n where digits 1..9 (or fewer if grid too small)
- * are placed along a single serpentine Hamiltonian path, at randomized spaced positions.
- * The serpentine path covers every cell exactly once without crossings.
+ * are placed along a single randomized Hamiltonian path, at randomized spaced positions.
+ * The path covers every cell exactly once without crossings.
  * Numbers are placed at spaced indices along this path in ascending order,
  * but the specific spacing is randomized using the provided seed (or crypto).
  */
 // PUBLIC_INTERFACE
 export function generateGrid(size = 5, seed = 42) {
-  /** Generate a grid with digits along a serpentine Hamiltonian path. Uses seed to randomize digit positions. */
+  /** Generate a grid with digits along a randomized Hamiltonian path. Uses seed to randomize path and digit positions. */
   const grid = Array.from({ length: size }, () =>
     Array.from({ length: size }, () => null)
   );
-  const path = buildSerpentinePath(size); // array of {row,col}
+  // Build a randomized Hamiltonian path to avoid horizontal bias
+  const path = buildRandomHamiltonianPath(size, seed);
   const total = path.length;
   const maxDigit = Math.min(9, total);
   if (maxDigit <= 0) return grid;
@@ -56,6 +57,88 @@ export function generateGrid(size = 5, seed = 42) {
     grid[row][col] = d;
   }
   return grid;
+}
+
+/**
+ * Build a randomized Hamiltonian path for an N x N grid using DFS with randomized neighbor order.
+ * This produces vertical, horizontal, and mixed-direction trails while covering each cell exactly once.
+ * If for some reason a full Hamiltonian path isn't found, falls back to serpentine.
+ */
+// PUBLIC_INTERFACE
+export function buildRandomHamiltonianPath(size, seed) {
+  /** Return array of {row,col} covering every cell exactly once using randomized DFS; fallback to serpentine if needed. */
+  const rng = createRng(seed);
+  const total = size * size;
+  const dirs = [
+    { dr: -1, dc: 0 }, // up
+    { dr: 1, dc: 0 },  // down
+    { dr: 0, dc: -1 }, // left
+    { dr: 0, dc: 1 },  // right
+  ];
+
+  // Pick a random start cell for more variety
+  const start = { row: Math.floor(rng() * size), col: Math.floor(rng() * size) };
+  const visited = Array.from({ length: size }, () => Array.from({ length: size }, () => false));
+  const path = [];
+
+  const inBounds = (r, c) => r >= 0 && r < size && c >= 0 && c < size;
+
+  function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+  }
+
+  function dfs(r, c, depth) {
+    visited[r][c] = true;
+    path.push({ row: r, col: c });
+    if (depth === total) return true;
+
+    const neighborOrder = dirs.slice();
+    shuffle(neighborOrder);
+
+    // Heuristic: prefer moving toward unvisited with fewer onward options (Warnsdorff-like)
+    neighborOrder.sort((a, b) => {
+      const naR = r + a.dr, naC = c + a.dc;
+      const nbR = r + b.dr, nbC = c + b.dc;
+
+      const degA = countUnvisitedDegree(naR, naC);
+      const degB = countUnvisitedDegree(nbR, nbC);
+      return degA - degB; // fewer options first
+    });
+
+    for (const d of neighborOrder) {
+      const nr = r + d.dr;
+      const nc = c + d.dc;
+      if (!inBounds(nr, nc) || visited[nr][nc]) continue;
+
+      if (dfs(nr, nc, depth + 1)) return true;
+    }
+
+    // backtrack
+    visited[r][c] = false;
+    path.pop();
+    return false;
+  }
+
+  function countUnvisitedDegree(r, c) {
+    if (!inBounds(r, c) || visited[r][c]) return Number.POSITIVE_INFINITY;
+    let cnt = 0;
+    for (const d of dirs) {
+      const nr = r + d.dr, nc = c + d.dc;
+      if (inBounds(nr, nc) && !visited[nr][nc]) cnt++;
+    }
+    return cnt;
+  }
+
+  const ok = dfs(start.row, start.col, 1);
+  if (ok && path.length === total) {
+    return path;
+  }
+
+  // Fallback to serpentine if randomized DFS fails (should be rare for small sizes)
+  return buildSerpentinePath(size);
 }
 
 /**
@@ -224,7 +307,7 @@ function createRng(seed) {
 }
 
 /**
- * Fisher-Yates shuffle with injected RNG function (currently unused but kept for utility).
+ * Fisher-Yates shuffle with injected RNG function (utility).
  */
 function shuffleInPlace(arr, rng) {
   for (let i = arr.length - 1; i > 0; i--) {
