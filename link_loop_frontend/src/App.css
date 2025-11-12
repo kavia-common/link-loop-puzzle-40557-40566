@@ -10,21 +10,9 @@
   --c-muted: #6B7280;
   --c-grid: #E5E7EB;
 
-  /* New tokens specific to board/cell surfaces */
-  /* Darker neutral/blue-tinted surface for improved contrast */
-  --board-surface: #0f172a;                 /* slate-900ish as panel base */
-  --board-tint-top: rgba(30,58,138,0.28);   /* deeper ocean gradient start (blue-900 @ ~28%) */
-  --board-tint-bottom: rgba(15,23,42,0.92); /* near-surface dark with slight transparency */
-  --cell-border: #1f2937;                   /* gray-800 for clearer grid lines on dark */
-  --cell-hover-bg: rgba(37,99,235,0.18);    /* stronger hover visible on dark */
-  --cell-active-bg: rgba(37,99,235,0.28);   /* stronger active state */
-  --cell-focus-ring: rgba(96,165,250,0.65); /* brighter ring for accessibility */
-  --cell-amber: rgba(245,158,11,0.28);      /* ensure numbered hover remains visible */
-  --cell-amber-border: rgba(245,158,11,0.75);
-
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.20);
-  --shadow-md: 0 4px 12px rgba(0,0,0,0.28);
-  --shadow-lg: 0 10px 24px rgba(0,0,0,0.35);
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+  --shadow-lg: 0 10px 24px rgba(0,0,0,0.12);
 
   --radius-sm: 8px;
   --radius-md: 12px;
@@ -117,43 +105,36 @@ a { color: var(--c-primary); }
 
 /* Board container centers the square grid and computes max size based on viewport */
 .board-card {
-  background: var(--board-surface);
+  background: var(--c-surface);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
-  padding: 20px;
-  width: min(92vw, 860px);
+  padding: 16px;
+  width: min(92vw, 820px);
+  /* Allow grid to size based on this container's content without forcing scroll */
   display: grid;
   justify-items: center;
-  gap: 14px;
-
-  /* Decorative background to lift board off page background (darkened) */
-  background-image:
-    radial-gradient(1200px 400px at 50% -10%, rgba(59,130,246,0.22), transparent), /* blue-500/22% glow */
-    linear-gradient(180deg, rgba(15,23,42,1), rgba(15,23,42,0.96)); /* slate-900 base w/ slight fade */
-  border: 1px solid rgba(148,163,184,0.18); /* slate-400/18% */
-
+  gap: 12px;
+  /* Compute an available height: full viewport minus sticky topbar and paddings */
   --topbar-height: 64px; /* approximate sticky bar height */
   --vertical-margins: 32px; /* card outer space and main padding allowance */
+  /* Available height for the square grid area */
   --available-h: calc(100vh - var(--topbar-height) - var(--vertical-margins));
 }
 
 /* The outer interactive container scales to fit within available space and width */
 .grid-container {
   position: relative;
+  /* Compute a square that fits both width and available height */
   --max-square: min(100%, var(--available-h));
   width: min(100%, var(--max-square));
   height: min(100%, var(--max-square));
   aspect-ratio: 1;
-
-  /* Distinct panel for the grid area */
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   overflow: hidden;
-  background: linear-gradient(180deg, var(--board-tint-top), var(--board-tint-bottom));
-  border: 1px solid rgba(148,163,184,0.25); /* slate-400/25% for visible edge */
-  box-shadow: 0 8px 18px rgba(2,6,23,0.22), inset 0 1px 0 rgba(255,255,255,0.08);
+  background: linear-gradient(180deg, rgba(37,99,235,0.06), rgba(255,255,255,0.9));
+  border: 1px solid var(--c-grid);
   touch-action: none;
   user-select: none;
-
   /* For container queries like font sizing inside */
   container-type: size;
 }
@@ -161,8 +142,8 @@ a { color: var(--c-primary); }
 /* Provide a max size ceiling for large screens to avoid overblown cells */
 @media (min-width: 1024px) {
   .grid-container {
-    max-width: 740px;
-    max-height: 740px;
+    max-width: 720px;
+    max-height: 720px;
   }
 }
 
@@ -172,34 +153,19 @@ a { color: var(--c-primary); }
   display: grid;
 }
 
-/* Cells: clear boundaries, hover/active states */
 .cell {
-  border-right: 1px solid var(--cell-border);
-  border-bottom: 1px solid var(--cell-border);
+  border-right: 1px solid var(--c-grid);
+  border-bottom: 1px solid var(--c-grid);
   display: grid;
   place-items: center;
   font-weight: 700;
   color: var(--c-text);
-  background: transparent;
+  /* Cell font scales with container size using container-relative units */
   font-size: clamp(12px, 4cqi, 18px);
-  transition: background-color 120ms ease, box-shadow 120ms ease, transform 120ms ease, color 120ms ease;
+  transition: var(--transition-fast);
 }
 
-/* Hover: subtle blue tint; Active: slightly stronger */
-.grid-container[aria-disabled="false"] .cell:hover {
-  background: var(--cell-hover-bg);
-}
-.grid-container[aria-disabled="false"] .cell:active {
-  background: var(--cell-active-bg);
-}
-
-/* Focus ring for accessibility if any cell becomes focusable in future */
-.cell:focus {
-  outline: none;
-  box-shadow: inset 0 0 0 2px var(--cell-focus-ring);
-}
-
-/* Invalid move feedback */
+/* Lightweight invalid move feedback */
 @keyframes cell-shake {
   10% { transform: translateX(-2%); }
   20% { transform: translateX(2%); }
@@ -214,35 +180,32 @@ a { color: var(--c-primary); }
 
 .cell.invalid {
   animation: cell-shake 250ms ease;
-  background: rgba(239, 68, 68, 0.14); /* stronger on dark surface */
+  background: rgba(239, 68, 68, 0.08);
 }
 
 .cell.invalid .digit {
   border-color: var(--c-error);
   color: var(--c-error);
 }
+.cell:nth-child(-n+1000) { /* keep specificity high, no-op */ }
+
+.grid > .cell:nth-child(n+1):nth-child(-n+9999) {}
+
+.grid > .cell:nth-child(-n + 0) {}
 
 .grid > .cell {
   position: relative;
 }
-
-/* Numbered cells: amber highlight chip with clear border for readability */
 .grid > .cell.has-number .digit {
-  background: #ffffff; /* maintain high contrast against dark board */
-  border: 2px solid var(--c-secondary);
-  color: var(--c-text); /* #111827 */
-  padding: 4px 10px;
-  border-radius: 14px;
+  background: white;
+  border: 2px solid var(--c-primary);
+  color: var(--c-text);
+  padding: 4px 8px;
+  border-radius: 12px;
   box-shadow: var(--shadow-sm);
   font-size: clamp(12px, 2.5vw, 18px);
 }
 
-/* Emphasize numbered cell background subtly on hover without hurting contrast */
-.grid-container[aria-disabled="false"] .cell.has-number:hover {
-  background: var(--cell-amber);
-}
-
-/* Grid mask remains for clean outer edge */
 .grid::before,
 .grid::after {
   content: '';
@@ -260,6 +223,7 @@ a { color: var(--c-primary); }
   position: absolute;
   inset: 0;
   pointer-events: none;
+  /* Ensure trail stays under any sticky bars and far under modal portal */
   z-index: 2;
 }
 
@@ -285,6 +249,7 @@ a { color: var(--c-primary); }
   display: grid;
   place-items: center;
   padding: 16px;
+  /* Highest app-level overlay; use very high value to beat any accidental z-index */
   z-index: 9999;
 }
 .modal-card {
