@@ -6,7 +6,8 @@ const Grid = ({
   path,
   containerRef,
   handlers,
-  invalidAt
+  invalidAt,
+  started = true
 }) => {
   const size = grid.length;
 
@@ -23,27 +24,42 @@ const Grid = ({
     return cells;
   }, [grid, size]);
 
+  const inertProps = started
+    ? {
+        onPointerDown: handlers.onPointerDown,
+        onPointerMove: handlers.onPointerMove,
+        onPointerUp: handlers.onPointerUp,
+        onTouchStart: handlers.onTouchStart,
+        onTouchMove: handlers.onTouchMove,
+        onTouchEnd: handlers.onTouchEnd,
+        onTouchCancel: handlers.onTouchCancel,
+        onPointerCancel: handlers.onPointerCancel,
+        onPointerLeave: handlers.onPointerLeave
+      }
+    : {
+        // Do not attach active handlers before start; keep container inert
+      };
+
   return (
     <div
       className={`grid-container`}
       ref={containerRef}
-      onPointerDown={handlers.onPointerDown}
-      onPointerMove={handlers.onPointerMove}
-      onPointerUp={handlers.onPointerUp}
-      onTouchStart={handlers.onTouchStart}
-      onTouchMove={handlers.onTouchMove}
-      onTouchEnd={handlers.onTouchEnd}
-      onTouchCancel={handlers.onTouchCancel}
-      onPointerCancel={handlers.onPointerCancel}
-      onPointerLeave={handlers.onPointerLeave}
+      {...inertProps}
       role="application"
       aria-label="Link Loop grid"
+      aria-disabled={!started}
+      style={{
+        // Slightly dim and block pointer events before start to visually hide interaction
+        pointerEvents: started ? 'auto' : 'none',
+        opacity: started ? 1 : 0.6
+      }}
     >
       <div
         className="grid"
         style={{
           gridTemplateColumns: `repeat(${size}, 1fr)`,
-          gridTemplateRows: `repeat(${size}, 1fr)`
+          gridTemplateRows: `repeat(${size}, 1fr)`,
+          visibility: started ? 'visible' : 'hidden'
         }}
       >
         {Array.from({ length: size * size }, (_, i) => {
@@ -62,7 +78,7 @@ const Grid = ({
         })}
       </div>
       {/* Path overlay */}
-      <div className="path-overlay" aria-hidden="true">
+      <div className="path-overlay" aria-hidden="true" style={{ visibility: started ? 'visible' : 'hidden' }}>
         <PathSVG path={path} cellSize={cellSize} size={size} padding={padding} />
       </div>
     </div>

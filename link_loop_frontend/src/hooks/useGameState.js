@@ -8,7 +8,8 @@ import { generateGrid, validatePath, isAdjacent, nextRequiredDigitFromPath, rand
 // PUBLIC_INTERFACE
 export function useGameState({ size = 5, seed = 42 } = {}) {
   /** Core game state: grid, path, interaction handlers, and validation */
-  const [gridSeed, setGridSeed] = useState(seed);
+  const initialSeed = seed;
+  const [gridSeed, setGridSeed] = useState(initialSeed);
   const [grid, setGrid] = useState(() => generateGrid(size, gridSeed));
   const [path, setPath] = useState([]); // [{row, col}]
   const [history, setHistory] = useState([]); // stack of path snapshots
@@ -148,6 +149,21 @@ export function useGameState({ size = 5, seed = 42 } = {}) {
     clearTransientState();
   }, [clearTransientState]);
 
+  // PUBLIC_INTERFACE
+  const resetAll = useCallback(() => {
+    /** Fully reset to pre-game state and keep the grid hidden until Start is pressed again. */
+    setIsDrawing(false);
+    setInvalidAt(null);
+    setPath([]);
+    setHistory([]);
+    setCompleted(false);
+    setValidation({ ok: false, reason: '' });
+    // Return to pre-game "not started" state
+    setStarted(false);
+    // Reset grid to initial seed so a fresh seed is only set when Start is pressed
+    setGridSeed(initialSeed);
+  }, [initialSeed]);
+
   const startGame = useCallback(() => {
     // Always re-roll to get variety between sessions
     setStarted(true);
@@ -282,6 +298,7 @@ export function useGameState({ size = 5, seed = 42 } = {}) {
       extendPathTo,
       endPath,
       reset,
+      resetAll,
       startGame,
       restartGame,
       setGrid, // expose in case of future size changes
