@@ -1,5 +1,5 @@
 //
-// Ocean Professional theme tokens and helpers
+// Ocean Professional theme tokens and helpers (High Contrast Light Refresh)
 //
 
 // PUBLIC_INTERFACE
@@ -8,33 +8,36 @@ export const theme = {
   // Use CSS variables to allow live theming and easy overrides.
   colors: {
     primary: '#2563EB',
+    primary600: '#1D4ED8',
     secondary: '#F59E0B',
-    success: '#F59E0B',
+    success: '#10B981',
     error: '#EF4444',
-    background: '#f9fafb',
-    surface: '#ffffff',
+    background: '#F8FAFD',
+    surface: '#FFFFFF',
+    surfaceAlt: '#F1F5F9',
     text: '#111827',
-    muted: '#6B7280',
+    muted: '#374151',
     gridLine: '#E5E7EB',
+    border: '#D1D5DB',
 
-    // New board/cell tokens (darkened board for higher contrast)
-    boardSurface: '#0f172a', // slate-900ish
-    boardTintTop: 'rgba(30,58,138,0.28)', // blue-900/28%
-    boardTintBottom: 'rgba(15,23,42,0.92)', // slate-900/92%
-    cellBorder: '#1f2937', // gray-800
-    cellHover: 'rgba(37,99,235,0.18)',
-    cellActive: 'rgba(37,99,235,0.28)',
-    selectionRing: 'rgba(96,165,250,0.65)', // blue-400 ring for visibility
-    cellAmber: 'rgba(245,158,11,0.28)',
+    // Board/cell tokens for light theme
+    boardSurface: '#FFFFFF',
+    boardTintTop: 'rgba(37,99,235,0.04)',
+    boardTintBottom: 'rgba(249,250,251,1)',
+    cellBorder: '#D1D5DB',
+    cellHover: 'rgba(37,99,235,0.06)',
+    cellActive: 'rgba(37,99,235,0.10)',
+    selectionRing: 'rgba(29,78,216,0.70)',
+    cellAmber: 'rgba(245,158,11,0.10)',
     cellAmberBorder: 'rgba(245,158,11,0.75)'
   },
   shadow: {
-    sm: '0 1px 2px rgba(0,0,0,0.20)',
-    md: '0 4px 12px rgba(0,0,0,0.28)',
-    lg: '0 10px 24px rgba(0,0,0,0.35)',
+    sm: '0 1px 2px rgba(0,0,0,0.06)',
+    md: '0 4px 10px rgba(0,0,0,0.08)',
+    lg: '0 10px 24px rgba(0,0,0,0.12)',
   },
   radius: {
-    sm: '8px',
+    sm: '10px',
     md: '12px',
     lg: '16px',
     xl: '20px'
@@ -52,14 +55,17 @@ export function applyThemeToDocument(doc = document, vars = theme) {
   const { colors } = vars;
   Object.entries({
     '--c-primary': colors.primary,
+    '--c-primary-600': colors.primary600,
     '--c-secondary': colors.secondary,
     '--c-success': colors.success,
     '--c-error': colors.error,
     '--c-bg': colors.background,
     '--c-surface': colors.surface,
+    '--c-surface-alt': colors.surfaceAlt,
     '--c-text': colors.text,
     '--c-muted': colors.muted,
     '--c-grid': colors.gridLine,
+    '--c-border': colors.border,
 
     // Additional board/cell variables
     '--board-surface': colors.boardSurface,

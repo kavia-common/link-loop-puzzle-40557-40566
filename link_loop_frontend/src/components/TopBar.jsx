@@ -19,7 +19,7 @@ export default function TopBar({
       </div>
       <div className="center">
         <div className="timer" aria-live="polite">
-          ⏱ {formatSeconds(seconds)}
+          ⏱ <strong>{formatSeconds(seconds)}</strong>
         </div>
         <div className="moves">
           Moves: <strong>{movesCount}</strong>
