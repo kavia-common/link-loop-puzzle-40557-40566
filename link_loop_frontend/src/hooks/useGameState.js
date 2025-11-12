@@ -196,9 +196,40 @@ export function useGameState({ size = 5, seed = 42 } = {}) {
     if (p) extendPathTo(p.row, p.col);
   }, [extendPathTo, getCellFromEvent, isDrawing, started]);
 
+  const cancelCurrentRunIfIncomplete = useCallback(() => {
+    // Cancel and clear transient trail if not a full completion attempt
+    if (path.length !== gridSize * gridSize) {
+      setIsDrawing(false);
+      setInvalidAt(null);
+      setPath([]);
+      setHistory([]);
+      setCompleted(false);
+      // clear validation message so UI visually resets
+      setValidation({ ok: false, reason: '' });
+    }
+  }, [gridSize, path.length]);
+
   const onPointerUp = useCallback(() => {
-    if (isDrawing) endPath();
-  }, [endPath, isDrawing]);
+    if (!isDrawing) return;
+    // End attempt; only validate if complete, else clear
+    if (path.length === gridSize * gridSize) {
+      endPath();
+    } else {
+      cancelCurrentRunIfIncomplete();
+    }
+  }, [cancelCurrentRunIfIncomplete, endPath, gridSize, isDrawing, path.length]);
+
+  const onPointerCancel = useCallback(() => {
+    // Pointer canceled (e.g., OS gesture) -> clear current run
+    cancelCurrentRunIfIncomplete();
+  }, [cancelCurrentRunIfIncomplete]);
+
+  const onPointerLeave = useCallback(() => {
+    // Leaving the grid while drawing should cancel the current attempt
+    if (isDrawing) {
+      cancelCurrentRunIfIncomplete();
+    }
+  }, [cancelCurrentRunIfIncomplete, isDrawing]);
 
   // Touch events mapping
   const onTouchStart = useCallback((e) => {
@@ -218,8 +249,17 @@ export function useGameState({ size = 5, seed = 42 } = {}) {
   }, [extendPathTo, getCellFromEvent, started]);
 
   const onTouchEnd = useCallback(() => {
-    if (isDrawing) endPath();
-  }, [endPath, isDrawing]);
+    if (!isDrawing) return;
+    if (path.length === gridSize * gridSize) {
+      endPath();
+    } else {
+      cancelCurrentRunIfIncomplete();
+    }
+  }, [cancelCurrentRunIfIncomplete, endPath, gridSize, isDrawing, path.length]);
+
+  const onTouchCancel = useCallback(() => {
+    cancelCurrentRunIfIncomplete();
+  }, [cancelCurrentRunIfIncomplete]);
 
   // Resize safety: end drawing if window loses focus to avoid stuck state
   useEffect(() => {
@@ -251,9 +291,12 @@ export function useGameState({ size = 5, seed = 42 } = {}) {
       onPointerDown,
       onPointerMove,
       onPointerUp,
+      onPointerCancel,
+      onPointerLeave,
       onTouchStart,
       onTouchMove,
-      onTouchEnd
+      onTouchEnd,
+      onTouchCancel
     }
   };
 }

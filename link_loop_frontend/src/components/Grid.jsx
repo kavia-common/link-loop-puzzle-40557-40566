@@ -33,6 +33,9 @@ const Grid = ({
       onTouchStart={handlers.onTouchStart}
       onTouchMove={handlers.onTouchMove}
       onTouchEnd={handlers.onTouchEnd}
+      onTouchCancel={handlers.onTouchCancel}
+      onPointerCancel={handlers.onPointerCancel}
+      onPointerLeave={handlers.onPointerLeave}
       role="application"
       aria-label="Link Loop grid"
     >
