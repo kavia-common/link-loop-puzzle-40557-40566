@@ -1,1 +1,7 @@
 /* Base reset is defined in App.css; keep file to satisfy CRA import */
+
+/* Portal root for modals */
+#modal-root {
+  position: relative;
+  z-index: 9999; /* keep above app root; actual backdrop sets fixed + z-index too */
+}

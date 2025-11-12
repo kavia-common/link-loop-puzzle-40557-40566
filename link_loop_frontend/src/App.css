@@ -223,6 +223,7 @@ a { color: var(--c-primary); }
   position: absolute;
   inset: 0;
   pointer-events: none;
+  /* Ensure trail stays under any sticky bars and far under modal portal */
   z-index: 2;
 }
 
@@ -243,6 +244,8 @@ a { color: var(--c-primary); }
   display: grid;
   place-items: center;
   padding: 16px;
+  /* Highest app-level overlay; use very high value to beat any accidental z-index */
+  z-index: 9999;
 }
 .modal-card {
   width: min(92vw, 480px);
