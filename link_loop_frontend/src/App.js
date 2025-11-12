@@ -7,7 +7,6 @@ import Grid from './components/Grid';
 import TopBar from './components/TopBar';
 import CompletionModal from './components/CompletionModal';
 import { formatSeconds } from './utils/gameUtils';
-import { leaderboardEnabled, submitScore } from './services/leaderboard';
 
 // PUBLIC_INTERFACE
 function App() {
@@ -19,7 +18,7 @@ function App() {
   const [size] = useState(5); // can be configurable in future
   // Use an initial seed, but the hook randomizes on Start/Restart for variety
   const game = useGameState({ size, seed: 1337 });
-  const { seconds, pause, resume, reset: resetTimer, running } = useTimer(false);
+  const { seconds, pause, resume, reset: resetTimer } = useTimer(false);
 
   // Start/pause timer depending on state transitions
   useEffect(() => {
@@ -27,10 +26,6 @@ function App() {
       pause();
     }
   }, [game.completed, pause]);
-
-  const onUndo = () => {
-    game.actions.undo();
-  };
 
   const onReset = () => {
     game.actions.reset();
@@ -52,36 +47,14 @@ function App() {
     onRestart();
   };
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const enableLeaderboard = leaderboardEnabled();
-
-  const onSubmitScore = async () => {
-    if (!enableLeaderboard || isSubmitting) return;
-    const name = window.prompt('Enter your name for the leaderboard:') || '';
-    if (!name.trim()) return;
-    try {
-      setIsSubmitting(true);
-      await submitScore({ name: name.trim(), seconds: Math.floor(seconds) });
-      alert('Score submitted!');
-    } catch (e) {
-      console.error(e);
-      alert('Unable to submit score.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const movesCount = useMemo(() => Math.max(0, game.history.length - 1), [game.history.length]);
 
   return (
     <div className="App app-shell">
       <TopBar
         seconds={seconds}
-        onUndo={onUndo}
         onReset={onReset}
         movesCount={movesCount}
-        showLeaderboard={enableLeaderboard}
-        onLeaderboardClick={() => window.alert('Leaderboard UI not implemented; backend integration is optional.')}
         started={game.started}
         completed={game.completed}
         onStart={onStart}
@@ -112,8 +85,6 @@ function App() {
         seconds={seconds}
         onClose={() => {}}
         onPlayAgain={onPlayAgain}
-        onSubmitScore={onSubmitScore}
-        enableLeaderboard={enableLeaderboard}
       />
     </div>
   );

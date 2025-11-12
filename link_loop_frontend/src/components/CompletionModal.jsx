@@ -18,7 +18,7 @@ function getOrCreateOverlayRoot() {
 }
 
 // PUBLIC_INTERFACE
-export default function CompletionModal({ open, seconds, onClose, onPlayAgain, onSubmitScore, enableLeaderboard }) {
+export default function CompletionModal({ open, seconds, onClose, onPlayAgain }) {
   /** Shown when puzzle is completed successfully, rendered via a portal above all content. */
   if (!open) return null;
 
@@ -34,9 +34,6 @@ export default function CompletionModal({ open, seconds, onClose, onPlayAgain, o
         </div>
         <div className="modal-actions">
           <button className="btn" onClick={onPlayAgain}>Play Again</button>
-          {enableLeaderboard && (
-            <button className="btn secondary" onClick={onSubmitScore}>Submit Score</button>
-          )}
           <button className="btn danger" onClick={onClose}>Close</button>
         </div>
       </div>

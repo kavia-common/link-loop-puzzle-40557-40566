@@ -4,11 +4,8 @@ import { formatSeconds } from '../utils/gameUtils';
 // PUBLIC_INTERFACE
 export default function TopBar({
   seconds,
-  onUndo,
   onReset,
   movesCount,
-  showLeaderboard,
-  onLeaderboardClick,
   started,
   completed,
   onStart,
@@ -36,20 +33,12 @@ export default function TopBar({
         )}
         {(started || completed) && (
           <>
-            <button className="btn secondary" onClick={onUndo} aria-label="Undo last move" disabled={!started || completed}>
-              Undo
-            </button>
             <button className="btn danger" onClick={onReset} aria-label="Reset path" disabled={!started}>
               Reset
             </button>
             <button className="btn" onClick={onRestart} aria-label="Restart game">
               Restart
             </button>
-            {showLeaderboard && (
-              <button className="btn" onClick={onLeaderboardClick} aria-label="Open leaderboard">
-                Leaderboard
-              </button>
-            )}
           </>
         )}
       </div>

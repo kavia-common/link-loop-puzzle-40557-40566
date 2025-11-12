@@ -281,7 +281,6 @@ export function useGameState({ size = 5, seed = 42 } = {}) {
       startPathAt,
       extendPathTo,
       endPath,
-      undo,
       reset,
       startGame,
       restartGame,
