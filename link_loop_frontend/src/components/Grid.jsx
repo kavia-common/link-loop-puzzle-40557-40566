@@ -65,11 +65,14 @@ const Grid = ({
           const c = i % size;
           const val = grid[r][c];
           const isInvalid = invalidAt && invalidAt.row === r && invalidAt.col === c;
+          /* Possible future state hooks for selected/active cells; no logic change now */
+          const classes = [
+            'cell',
+            val ? 'has-number' : '',
+            isInvalid ? 'invalid' : ''
+          ].filter(Boolean).join(' ');
           return (
-            <div
-              key={`${r}-${c}`}
-              className={`cell ${val ? 'has-number' : ''} ${isInvalid ? 'invalid' : ''}`}
-            >
+            <div key={`${r}-${c}`} className={classes}>
               {val ? <span className="digit">{val}</span> : null}
             </div>
           );

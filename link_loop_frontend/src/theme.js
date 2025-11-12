@@ -16,6 +16,17 @@ export const theme = {
     text: '#111827',
     muted: '#6B7280',
     gridLine: '#E5E7EB',
+
+    // New board/cell tokens
+    boardSurface: '#ffffff',
+    boardTintTop: 'rgba(37,99,235,0.08)',
+    boardTintBottom: 'rgba(255,255,255,0.95)',
+    cellBorder: '#D1D5DB',
+    cellHover: 'rgba(37,99,235,0.06)',
+    cellActive: 'rgba(37,99,235,0.14)',
+    selectionRing: 'rgba(37,99,235,0.45)',
+    cellAmber: 'rgba(245,158,11,0.16)',
+    cellAmberBorder: 'rgba(245,158,11,0.55)'
   },
   shadow: {
     sm: '0 1px 2px rgba(0,0,0,0.06)',
@@ -49,6 +60,18 @@ export function applyThemeToDocument(doc = document, vars = theme) {
     '--c-text': colors.text,
     '--c-muted': colors.muted,
     '--c-grid': colors.gridLine,
+
+    // Additional board/cell variables
+    '--board-surface': colors.boardSurface,
+    '--board-tint-top': colors.boardTintTop,
+    '--board-tint-bottom': colors.boardTintBottom,
+    '--cell-border': colors.cellBorder,
+    '--cell-hover-bg': colors.cellHover,
+    '--cell-active-bg': colors.cellActive,
+    '--cell-focus-ring': colors.selectionRing,
+    '--cell-amber': colors.cellAmber,
+    '--cell-amber-border': colors.cellAmberBorder,
+
     '--shadow-sm': theme.shadow.sm,
     '--shadow-md': theme.shadow.md,
     '--shadow-lg': theme.shadow.lg,
