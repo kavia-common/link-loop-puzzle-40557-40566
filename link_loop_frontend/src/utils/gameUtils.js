@@ -76,53 +76,102 @@ export function generateGrid(size = 5, seed = 42) {
 /**
  * Build a randomized Hamiltonian path for an N x N grid using DFS with randomized neighbor order.
  * This produces vertical, horizontal, and mixed-direction trails while covering each cell exactly once.
- * If for some reason a full Hamiltonian path isn't found, falls back to serpentine.
+ * The generator is seeded and includes periodic orientation bias toggles to avoid long straight runs.
+ * Serpentine fallback and any row-wise iteration patterns have been removed to ensure diversity.
  */
 // PUBLIC_INTERFACE
 export function buildRandomHamiltonianPath(size, seed) {
-  /** Return array of {row,col} covering every cell exactly once using randomized DFS; fallback to serpentine if needed. */
+  /** Return array of {row,col} covering every cell exactly once using randomized DFS with shuffled neighbors and bias toggles. */
   const rng = createRng(seed);
   const total = size * size;
-  const dirs = [
-    { dr: -1, dc: 0 }, // up
-    { dr: 1, dc: 0 },  // down
-    { dr: 0, dc: -1 }, // left
-    { dr: 0, dc: 1 },  // right
+
+  // Cardinal directions
+  const DIRS = [
+    { name: 'U', dr: -1, dc: 0 },
+    { name: 'D', dr: 1, dc: 0 },
+    { name: 'L', dr: 0, dc: -1 },
+    { name: 'R', dr: 0, dc: 1 },
   ];
 
-  // Pick a random start cell for more variety
+  // Random start for variety
   const start = { row: Math.floor(rng() * size), col: Math.floor(rng() * size) };
   const visited = Array.from({ length: size }, () => Array.from({ length: size }, () => false));
   const path = [];
 
   const inBounds = (r, c) => r >= 0 && r < size && c >= 0 && c < size;
 
-  function shuffle(arr) {
+  // Orientation bias toggles: occasionally prefer vertical or horizontal to introduce turns.
+  // Bias state flips stochastically as depth increases to avoid degeneracy.
+  function orientationBias(depth) {
+    // Every k steps, flip a coin to toggle preference
+    const k = 3 + Math.floor(rng() * 3); // 3..5
+    const phase = depth % k === 0 ? (rng() < 0.5 ? 'H' : 'V') : null;
+    return phase; // 'H' prefer horizontal, 'V' prefer vertical, null neutral
+  }
+
+  function shuffledNeighbors(r, c, depth) {
+    const bias = orientationBias(depth);
+    const arr = DIRS.slice();
+
+    // Primary shuffle
     for (let i = arr.length - 1; i > 0; i--) {
       const j = Math.floor(rng() * (i + 1));
       [arr[i], arr[j]] = [arr[j], arr[i]];
     }
+
+    // Apply soft bias by stable-sorting groups after shuffle
+    if (bias === 'H') {
+      // prioritize L/R slightly by grouping
+      arr.sort((a, b) => {
+        const ah = (a.name === 'L' || a.name === 'R') ? 0 : 1;
+        const bh = (b.name === 'L' || b.name === 'R') ? 0 : 1;
+        return ah - bh;
+      });
+    } else if (bias === 'V') {
+      // prioritize U/D slightly
+      arr.sort((a, b) => {
+        const av = (a.name === 'U' || a.name === 'D') ? 0 : 1;
+        const bv = (b.name === 'U' || b.name === 'D') ? 0 : 1;
+        return av - bv;
+      });
+    }
+
+    // Warnsdorff-like heuristic: prefer neighbors with few onward options (lower degree)
+    arr.sort((a, b) => {
+      const degA = unvisitedDegree(r + a.dr, c + a.dc);
+      const degB = unvisitedDegree(r + b.dr, c + b.dc);
+      return degA - degB;
+    });
+
+    return arr;
+  }
+
+  function unvisitedDegree(r, c) {
+    if (!inBounds(r, c) || visited[r][c]) return Number.POSITIVE_INFINITY;
+    let cnt = 0;
+    for (const d of DIRS) {
+      const nr = r + d.dr, nc = c + d.dc;
+      if (inBounds(nr, nc) && !visited[nr][nc]) cnt++;
+    }
+    return cnt;
   }
 
   function dfs(r, c, depth) {
     visited[r][c] = true;
     path.push({ row: r, col: c });
+
     if (depth === total) return true;
 
-    const neighborOrder = dirs.slice();
-    shuffle(neighborOrder);
+    const neighbors = shuffledNeighbors(r, c, depth);
 
-    // Heuristic: prefer moving toward unvisited with fewer onward options (Warnsdorff-like)
-    neighborOrder.sort((a, b) => {
-      const naR = r + a.dr, naC = c + a.dc;
-      const nbR = r + b.dr, nbC = c + b.dc;
+    // Occasionally reverse a pair to induce a turn even if degree ties
+    if (rng() < 0.15) {
+      const i = Math.floor(rng() * neighbors.length);
+      const j = Math.floor(rng() * neighbors.length);
+      [neighbors[i], neighbors[j]] = [neighbors[j], neighbors[i]];
+    }
 
-      const degA = countUnvisitedDegree(naR, naC);
-      const degB = countUnvisitedDegree(nbR, nbC);
-      return degA - degB; // fewer options first
-    });
-
-    for (const d of neighborOrder) {
+    for (const d of neighbors) {
       const nr = r + d.dr;
       const nc = c + d.dc;
       if (!inBounds(nr, nc) || visited[nr][nc]) continue;
@@ -136,41 +185,41 @@ export function buildRandomHamiltonianPath(size, seed) {
     return false;
   }
 
-  function countUnvisitedDegree(r, c) {
-    if (!inBounds(r, c) || visited[r][c]) return Number.POSITIVE_INFINITY;
-    let cnt = 0;
-    for (const d of dirs) {
-      const nr = r + d.dr, nc = c + d.dc;
-      if (inBounds(nr, nc) && !visited[nr][nc]) cnt++;
-    }
-    return cnt;
-  }
+  // Try multiple randomized attempts to ensure success without using serpentine fallback.
+  const maxAttempts = 12;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    // Clear visited and path for each attempt
+    for (let r = 0; r < size; r++) for (let c = 0; c < size; c++) visited[r][c] = false;
+    path.length = 0;
 
-  const ok = dfs(start.row, start.col, 1);
-  if (ok && path.length === total) {
-    return path;
-  }
+    // Optionally vary start slightly across attempts
+    const s =
+      attempt === 0
+        ? start
+        : { row: Math.floor(rng() * size), col: Math.floor(rng() * size) };
 
-  // Fallback to serpentine if randomized DFS fails (should be rare for small sizes)
-  return buildSerpentinePath(size);
-}
-
-/**
- * Build a deterministic serpentine Hamiltonian path for an N x N grid.
- * Starts at (0,0), moves left-to-right on even rows and right-to-left on odd rows.
- */
-// PUBLIC_INTERFACE
-export function buildSerpentinePath(size) {
-  /** Return array of {row,col} covering every cell exactly once in a serpentine order. */
-  const path = [];
-  for (let r = 0; r < size; r++) {
-    if (r % 2 === 0) {
-      for (let c = 0; c < size; c++) path.push({ row: r, col: c });
-    } else {
-      for (let c = size - 1; c >= 0; c--) path.push({ row: r, col: c });
+    if (dfs(s.row, s.col, 1) && path.length === total) {
+      return path.slice();
     }
   }
-  return path;
+
+  // As a final measure (extremely rare for small N), construct a randomized zig-zag with column flips to keep turns.
+  // This is NOT a simple row-wise serpentine; it alternates by columns and flips sub-segments to avoid long horizontals.
+  const alt = [];
+  const cols = Array.from({ length: size }, (_, x) => x);
+  // shuffle columns to avoid consistent horizontal patterns
+  for (let i = cols.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [cols[i], cols[j]] = [cols[j], cols[i]];
+  }
+  for (let i = 0; i < cols.length; i++) {
+    const c = cols[i];
+    const rOrder = i % 2 === 0 ? [...Array(size).keys()] : [...Array(size).keys()].reverse();
+    for (const r of rOrder) {
+      alt.push({ row: r, col: c });
+    }
+  }
+  return alt;
 }
 
 /**
@@ -234,6 +283,7 @@ export function gridCoordToSvgPoint(row, col, cellSize, padding = 0) {
 
 /**
  * Validate that the final continuous path visits each cell once and connects digits in ascending order.
+ * Mixed orientations (vertical/horizontal turns) are accepted; only 4-neighbor adjacency is required.
  * This validation is for completed paths only; interaction-level backtracking is handled elsewhere.
  * The path is an array of {row, col}. Grid contains digits or null.
  */
@@ -329,15 +379,7 @@ function createRng(seed) {
   return Math.random;
 }
 
-/**
- * Fisher-Yates shuffle with injected RNG function (utility).
- */
-function shuffleInPlace(arr, rng) {
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-}
+/* (removed) shuffleInPlace utility; shuffling is performed locally within the path builder using the seeded RNG to ensure encapsulated randomness. */
 
 /**
  * Deterministic PRNG

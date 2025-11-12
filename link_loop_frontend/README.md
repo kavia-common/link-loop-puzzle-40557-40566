@@ -54,5 +54,5 @@ Create a `.env.local` as needed. Do not commit secrets.
 
 ## Notes
 
-- Numbers 1..9 are placed along a randomized Hamiltonian path (vertical, horizontal, and mixed turns) that traverses all cells once; digit spacing is randomized using a seed.
-- The game starts in a ready state; drawing is disabled and the timer is idle until you click Start. Start/Restart regenerates the layout (digits and target path constraints) for variety.
+- Numbers 1..9 are placed along a randomized Hamiltonian path (vertical, horizontal, and mixed turns) that traverses all cells once; digit spacing is randomized using a fresh seed each run.
+- The game starts in a ready state; drawing is disabled and the timer is idle until you click Start. Start/Restart reseeds and regenerates the layout (digits and canonical path) for variety.

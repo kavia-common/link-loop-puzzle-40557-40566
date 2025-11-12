@@ -149,15 +149,15 @@ export function useGameState({ size = 5, seed = 42 } = {}) {
   }, [clearTransientState]);
 
   const startGame = useCallback(() => {
-    // On first start, if using a default seed, re-roll to get variety between sessions
+    // Always re-roll to get variety between sessions
     setStarted(true);
-    setGridSeed((prev) => {
-      // If prev is the initial provided seed, randomize once to avoid always same layout
-      const newSeed = randomSeed();
-      if (newSeed === prev) return randomSeed();
+    setGridSeed(() => {
+      let newSeed = randomSeed();
+      // avoid zero-probability repeat by re-rolling if equal to current gridSeed
+      if (newSeed === gridSeed) newSeed = randomSeed();
       return newSeed;
     });
-  }, []);
+  }, [gridSeed]);
 
   const restartGame = useCallback(() => {
     // Full replay: new randomized grid (fresh seed) and cleared state
